@@ -16,7 +16,7 @@ function App() {
           |
   x-B-+   C
       |   |
-      +---+ `;
+      +---+`;
 
     const startChar = '@';
     const endChar = 'x';
@@ -42,6 +42,8 @@ function App() {
 
     const start = findCharacterPosition(mapArray, startChar);
 
+    const { row: startRow, col: startCol } = start;
+
     console.log('start', start);
 
     return (
@@ -57,6 +59,7 @@ function App() {
                                         border: '1px solid black',
                                         padding: '8px',
                                         textAlign: 'center',
+                                        backgroundColor: rowIndex === startRow && cellIndex === startCol ? 'yellow' : 'white',
                                     }}
                                 >
                                     {cell}
@@ -66,6 +69,7 @@ function App() {
                     ))}
                 </tbody>
             </table>
+            <button>Start Walk</button>
         </div>
     );
 }
