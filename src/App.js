@@ -2,24 +2,46 @@ import logo from './logo.svg';
 import './App.css';
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+
+    const mapString = `  @---A---+
+          |
+  x-B-+   C
+      |   |
+      +---+`;
+
+    const mapArray = mapString
+        .split('\n')
+        .map(row =>
+            row.split('')
+        );
+
+
+    console.log('map array', mapArray);
+
+    return (
+        <div>
+            <table style={{ borderCollapse: 'collapse', width: '50%', margin: '20px auto', border: '1px solid black' }}>
+                <tbody>
+                    {mapArray.map((row, rowIndex) => (
+                        <tr key={rowIndex}>
+                            {row.map((cell, cellIndex) => (
+                                <td
+                                    key={cellIndex}
+                                    style={{
+                                        border: '1px solid black',
+                                        padding: '8px',
+                                        textAlign: 'center',
+                                    }}
+                                >
+                                    {cell}
+                                </td>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
 }
 
 export default App;
