@@ -1,5 +1,6 @@
 import logo from './logo.svg';
 import './App.css';
+import { useState } from 'react';
 
 /*
 check current position
@@ -29,7 +30,8 @@ function App() {
 
     console.log('map array', mapArray);
 
-    function findCharacterPosition(array, start) {
+
+    function findStartPosition(array, start) {
         for (let row = 0; row < array.length; row++) {
             for (let col = 0; col < array[row].length; col++) {
                 if (array[row][col] === start) {
@@ -40,11 +42,12 @@ function App() {
         return null;
     };
 
-    const start = findCharacterPosition(mapArray, startChar);
+    const [currentPosition, setNextPosition] = useState(() => {
+        return findStartPosition(mapArray, startChar);
+    });
 
-    const { row: startRow, col: startCol } = start;
 
-    console.log('start', start);
+    console.log('start', currentPosition);
 
     return (
         <div>
@@ -59,7 +62,7 @@ function App() {
                                         border: '1px solid black',
                                         padding: '8px',
                                         textAlign: 'center',
-                                        backgroundColor: rowIndex === startRow && cellIndex === startCol ? 'yellow' : 'white',
+                                        backgroundColor: rowIndex === currentPosition.row && cellIndex === currentPosition.col ? 'yellow' : 'white',
                                     }}
                                 >
                                     {cell}
