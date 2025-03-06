@@ -30,7 +30,6 @@ function App() {
 
     console.log('map array', mapArray);
 
-
     function findStartPosition(array, start) {
         for (let row = 0; row < array.length; row++) {
             for (let col = 0; col < array[row].length; col++) {
@@ -42,12 +41,17 @@ function App() {
         return null;
     };
 
-    const [currentPosition, setNextPosition] = useState(() => {
-        return findStartPosition(mapArray, startChar);
-    });
+    const [currentPosition, setNextPosition] = useState(() => findStartPosition(mapArray, startChar));
+
+    const moves = {
+        N: currentPosition.row - 1,
+        S: currentPosition.row + 1,
+        E: currentPosition.col + 1,
+        W: currentPosition.col - 1,
+    }
 
 
-    console.log('start', currentPosition);
+    console.log('start', currentPosition.col);
 
     return (
         <div>
@@ -62,7 +66,9 @@ function App() {
                                         border: '1px solid black',
                                         padding: '8px',
                                         textAlign: 'center',
-                                        backgroundColor: rowIndex === currentPosition.row && cellIndex === currentPosition.col ? 'yellow' : 'white',
+                                        backgroundColor: rowIndex === currentPosition.row
+                                            && cellIndex === currentPosition.col
+                                            ? 'yellow' : 'white',
                                     }}
                                 >
                                     {cell}
