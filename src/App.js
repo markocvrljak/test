@@ -20,7 +20,13 @@ function App() {
       +---+`;
 
 
-    const intersectionsMap = ``;
+    const intersectionsMap = `  @
+  | +-C--+
+  A |    |
+  +---B--+
+    |      x
+    |      |
+    +---D--+`;
 
     const startChar = '@';
     const endChar = 'x';
@@ -96,26 +102,17 @@ function App() {
     const checkNextPosition = (currentPosition, mapArray) => {
         const { row, col } = currentPosition;
 
-        // pitfall checks for row and column
-        const isRowValid = row >= 0 && row < mapArray.length;
-        const isColValid = col >= 0 && col < (mapArray[row]?.length || 0);
+        // Check up character (row - 1)
+        const upChar = row - 1 >= 0 ? mapArray[row - 1][col] : null;
 
-        if (!isRowValid || !isColValid) {
-            console.error('Invalid current position:', currentPosition);
-            return;
-        }
-
-        // Check up character (row + 1)
-        const upChar = row + 1 < mapArray.length ? mapArray[row + 1][col] : null;
-
-        // Check down character (row - 1)
-        const downChar = row - 1 >= 0 ? mapArray[row - 1][col] : null;
+        // Check down character (row + 1)
+        const downChar = row + 1 < mapArray.length ? mapArray[row + 1][col] : null;
 
         // Check left character (col - 1)
-        const leftChar = col - 1 >= 0 ? mapArray[row][col - 1] : null;
+        const leftChar = mapArray[row][col - 1];
 
         // Check right character (col + 1)
-        const rightChar = col + 1 < mapArray[row].length ? mapArray[row][col + 1] : null;
+        const rightChar = mapArray[row][col + 1];
 
         console.log('up char', upChar);
         console.log('down char', downChar);
