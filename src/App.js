@@ -28,7 +28,7 @@ function App() {
     |      |
     +---D--+`;
 
-    const startChar = '@';
+    const startChar = 'A';
     const endChar = 'x';
 
     const mapArray = basicMap
@@ -73,13 +73,6 @@ function App() {
         right: { row: currentPosition.row, col: currentPosition.col + 1 },
     }
 
-    // const chars = {
-    //     N: mapArray[moves.N][currentPosition.col],
-    //     S: mapArray[moves.S][currentPosition.col],
-    //     E: mapArray[currentPosition.row][moves.E],
-    //     W: mapArray[currentPosition.row][moves.W],
-    // }
-
     const move = (direction) => {
         switch (direction) {
             case 'up':
@@ -104,15 +97,19 @@ function App() {
 
         // Check up character (row - 1)
         const upChar = row - 1 >= 0 ? mapArray[row - 1][col] : null;
+        setPossibleMoves({ ...possibleMoves, up: upChar });
 
         // Check down character (row + 1)
         const downChar = row + 1 < mapArray.length ? mapArray[row + 1][col] : null;
+        setPossibleMoves({ ...possibleMoves, down: downChar });
 
         // Check left character (col - 1)
         const leftChar = mapArray[row][col - 1];
+        setPossibleMoves({ ...possibleMoves, left: leftChar });
 
         // Check right character (col + 1)
         const rightChar = mapArray[row][col + 1];
+        setPossibleMoves({ ...possibleMoves, right: rightChar });
 
         console.log('up char', upChar);
         console.log('down char', downChar);
@@ -123,6 +120,8 @@ function App() {
 
     console.log('current position', currentPosition.row, currentPosition.col);
     console.log('char on current position', mapArray[currentPosition.row][currentPosition.col]);
+
+    console.log('possible moves', possibleMoves);
 
     return (
         <div>
