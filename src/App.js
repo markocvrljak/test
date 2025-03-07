@@ -13,16 +13,25 @@ check end
 
 function App() {
 
-    const mapString = `  @---A---+
+    const basicMap = `  @---A---+
           |
   x-B-+   C
       |   |
       +---+`;
 
+
+    const intersectionsMap = `  @
+  | +-C--+
+  A |    |
+  +---B--+
+    |      x
+    |      |
+    +---D--+`;
+
     const startChar = '@';
     const endChar = 'x';
 
-    const mapArray = mapString
+    const mapArray = basicMap
         .split('\n')
         .map(row =>
             row.split('')
@@ -43,15 +52,33 @@ function App() {
 
     const [currentPosition, setNextPosition] = useState(() => findStartPosition(mapArray, startChar));
 
+    const validChars = {
+        dash: '-',
+        plus: '+',
+        pipe: '|',
+        space: ' ',
+        start: startChar,
+        end: endChar,
+        letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
+    }
+
+    // const chars = {
+    //     N: mapArray[moves.N][currentPosition.col],
+    //     S: mapArray[moves.S][currentPosition.col],
+    //     E: mapArray[currentPosition.row][moves.E],
+    //     W: mapArray[currentPosition.row][moves.W],
+    // }
+
     const moves = {
-        N: currentPosition.row - 1,
-        S: currentPosition.row + 1,
-        E: currentPosition.col + 1,
-        W: currentPosition.col - 1,
+        up: { row: currentPosition.row - 1, col: currentPosition.col },
+        down: { row: currentPosition.row + 1, col: currentPosition.col },
+        left: { row: currentPosition.row, col: currentPosition.col - 1 },
+        right: { row: currentPosition.row, col: currentPosition.col + 1 },
     }
 
 
-    console.log('start', currentPosition.col);
+    console.log('current position', currentPosition.row, currentPosition.col);
+    console.log('char on current position', mapArray[currentPosition.row][currentPosition.col]);
 
     return (
         <div>
@@ -78,7 +105,7 @@ function App() {
                     ))}
                 </tbody>
             </table>
-            <button onClick={() => setNextPosition({ row: moves.S, col: currentPosition.col })}>Start Walk</button>
+            <button onClick={() => setNextPosition(moves.down)}>Start Walk</button>
         </div>
     );
 }
