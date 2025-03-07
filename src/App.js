@@ -78,7 +78,7 @@ function App() {
                     ))}
                 </tbody>
             </table>
-            <button>Start Walk</button>
+            <button onClick={() => setNextPosition({ row: moves.S, col: currentPosition.col })}>Start Walk</button>
         </div>
     );
 }
