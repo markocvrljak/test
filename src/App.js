@@ -45,7 +45,7 @@ function App() {
     const startChar = '@';
     const endChar = 'x';
 
-    const mapArray = basicMap.split('\n').map(row => row.split(''));
+    const mapArray = intersectionsMap.split('\n').map(row => row.split(''));
 
     const [currentPosition, setCurrentPosition] = useState(() => findStartPosition(mapArray, startChar));
     const [possibleMoves, setPossibleMoves] = useState({ up: false, down: false, left: false, right: false });
@@ -181,6 +181,16 @@ function App() {
                 move(direction);
                 return;
             }
+        }
+
+        // Handle `+` intersections
+        if (currentChar === validChars.plus) {
+            if (possibleMoves.right === '-' || possibleMoves.left === '-') {
+                if (possibleMoves.right === '-') return move('right');
+                if (possibleMoves.left === '-') return move('left');
+            }
+            if (possibleMoves.up === '|') return move('up');
+            if (possibleMoves.down === '|') return move('down');
         }
 
         // Handle movement based on the `+` character
