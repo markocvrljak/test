@@ -32,14 +32,19 @@ function App() {
       |   |
       +---C`;
 
+    const sameLocationMap = `     +-O-N-+
+     |     |
+     |   +-I-+
+ @-G-O-+ | | |
+     | | +-+ E
+     +-+     S
+             |
+             x`;
+
     const startChar = '@';
     const endChar = 'x';
 
-    const mapArray = onTurnsMap
-        .split('\n')
-        .map(row =>
-            row.split('')
-        );
+    const mapArray = basicMap.split('\n').map(row => row.split(''));
 
     function findStartPosition(array, start) {
         for (let row = 0; row < array.length; row++) {
