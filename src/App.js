@@ -29,13 +29,11 @@ function App() {
     const startChar = '@';
     const endChar = 'x';
 
-    const mapArray = basicMap
+    const mapArray = intersectionsMap
         .split('\n')
         .map(row =>
             row.split('')
         );
-
-    console.log('map array', mapArray);
 
     function findStartPosition(array, start) {
         for (let row = 0; row < array.length; row++) {
@@ -88,23 +86,15 @@ function App() {
         if (newPosition) {
             setNextPosition(newPosition);
             setPreviousMove(direction);  // Update the previous move
-            setPath(prevPath => [...prevPath, mapArray[newPosition.row][newPosition.col]]);
-        }
-        switch (direction) {
-            case 'up':
-                setNextPosition(moves.up);
-                break;
-            case 'down':
-                setNextPosition(moves.down);
-                break;
-            case 'left':
-                setNextPosition(moves.left);
-                break;
-            case 'right':
-                setNextPosition(moves.right);
-                break;
-            default:
-                break;
+            setPath(prevPath => {
+                const newPath = [...prevPath, mapArray[newPosition.row][newPosition.col]];
+                // Check if the current position is a letter and add it to the letters state
+                const currentChar = mapArray[newPosition.row][newPosition.col];
+                if (validChars.letters.includes(currentChar)) {
+                    setLetters(prevLetters => [...prevLetters, currentChar]);
+                }
+                return newPath;
+            });
         }
     }
 
@@ -123,7 +113,7 @@ function App() {
         // Check right character (col + 1)
         const rightChar = mapArray[row][col + 1];
 
-        setPossibleMoves({ up: upChar, down: downChar, left: leftChar, right: rightChar })
+        setPossibleMoves({ up: upChar, down: downChar, left: leftChar, right: rightChar });
 
         console.log('up char', upChar);
         console.log('down char', downChar);
@@ -140,16 +130,10 @@ function App() {
 
     console.log('possible moves', possibleMoves);
 
-    // Helper function to log the move and execute it
-    const logAndMove = (direction, char) => {
-        console.log(`Moving ${direction} towards "${char}"`);
-        move(direction);
-    };
-
     // Function to check for a valid move and move accordingly
     const checkAndMove = (direction, char) => {
         if (possibleMoves[direction] === char) {
-            logAndMove(direction, char);
+            move(direction);
             return true;
         }
         return false;
@@ -161,9 +145,7 @@ function App() {
 
         // If current position is '-' (dash), avoid moving in the opposite direction
         if (currentChar === '-') {
-            // If we're moving right and it’s a letter or allowed character, prioritize that.
             if (possibleMoves.right !== ' ' && possibleMoves.right !== null) {
-                // Don't go back in the opposite direction (left)
                 if (previousMove !== 'left') {
                     console.log('Moving right towards', possibleMoves.right);
                     move('right');
@@ -175,7 +157,6 @@ function App() {
         // If we're on a pipe ('|'), prioritize moving up or down
         for (const direction of ['up', 'down']) {
             if (possibleMoves[direction] === '|') {
-                // Avoid moving back to the previous direction
                 if ((previousMove === 'up' && direction === 'down') || (previousMove === 'down' && direction === 'up')) {
                     console.log('Cannot go back in the opposite direction');
                     continue;
@@ -210,7 +191,6 @@ function App() {
         if (checkAndMove('left', '+')) return;
     };
 
-
     return (
         <div>
             <table style={{ borderCollapse: 'collapse', width: '50%', margin: '20px auto', border: '1px solid black' }}>
@@ -239,6 +219,10 @@ function App() {
             <div>
                 <h3>Path Taken:</h3>
                 <p>{path.join(' → ')}</p>
+            </div>
+            <div>
+                <h3>Collected Letters:</h3>
+                <p>{letters.join(', ')}</p>
             </div>
             <button onClick={moveAccordingToPath}>Start Walk</button>
             <button onClick={() => checkNextPosition(currentPosition, mapArray)}>Check next move</button>
