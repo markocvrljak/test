@@ -29,7 +29,7 @@ function App() {
     const startChar = '@';
     const endChar = 'x';
 
-    const mapArray = intersectionsMap
+    const mapArray = basicMap
         .split('\n')
         .map(row =>
             row.split('')
@@ -159,41 +159,40 @@ function App() {
     const moveAccordingToPath = () => {
         const currentChar = mapArray[currentPosition.row][currentPosition.col];
 
-        // Handle moving to '-' first (priority over '|')
-        for (const direction of ['right', 'left', 'up', 'down']) {
-            if (possibleMoves[direction] === '-') {
-                logAndMove(direction, '-');
-                return;
+        // If current position is '-' (dash), avoid moving in the opposite direction
+        if (currentChar === '-') {
+            // If we're moving right and it’s a letter or allowed character, prioritize that.
+            if (possibleMoves.right !== ' ' && possibleMoves.right !== null) {
+                // Don't go back in the opposite direction (left)
+                if (previousMove !== 'left') {
+                    console.log('Moving right towards', possibleMoves.right);
+                    move('right');
+                    return;
+                }
             }
         }
 
-        // Handle moving to '|' if there are no '-' available
+        // If we're on a pipe ('|'), prioritize moving up or down
         for (const direction of ['up', 'down']) {
             if (possibleMoves[direction] === '|') {
-                // Don't go back to the direction you just came from
+                // Avoid moving back to the previous direction
                 if ((previousMove === 'up' && direction === 'down') || (previousMove === 'down' && direction === 'up')) {
-                    console.log(`Cannot go back in the opposite direction`);
+                    console.log('Cannot go back in the opposite direction');
                     continue;
                 }
-                logAndMove(direction, '|');
+                console.log(`Moving ${direction} towards pipe`);
+                move(direction);
                 return;
             }
         }
 
-        // Handle moving to letters (A-Z)
+        // Check and move to letters (A-Z)
         for (const direction of ['right', 'down']) {
             if (validChars.letters.includes(possibleMoves[direction])) {
                 console.log(`Found letter "${possibleMoves[direction]}", moving ${direction}`);
                 move(direction);
                 return;
             }
-        }
-
-        // If at a letter, continue based on available valid moves ('-' or '|')
-        if (validChars.letters.includes(currentChar)) {
-            checkNextPosition(currentPosition, mapArray);
-            if (checkAndMove('right', '-')) return;
-            if (checkAndMove('left', '-')) return;
         }
 
         // Handle the '+' case: Move based on available pipes and dashes
@@ -209,8 +208,8 @@ function App() {
         if (checkAndMove('up', '+')) return;
         if (checkAndMove('down', '+')) return;
         if (checkAndMove('left', '+')) return;
-        if (checkAndMove('right', '+')) return;
     };
+
 
     return (
         <div>
