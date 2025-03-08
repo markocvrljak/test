@@ -88,7 +88,7 @@ function App() {
                 (previousMove === 'down' && direction === 'up') ||
                 (previousMove === 'left' && direction === 'right') ||
                 (previousMove === 'right' && direction === 'left')) {
-                console.log('Cannot go back in the opposite direction');
+                console.log('Cannot go back in the opposite direction!');
                 return; // Prevent going back
             }
         }
@@ -114,6 +114,8 @@ function App() {
             });
         }
     }
+
+
 
 
     const checkNextPosition = (currentPosition, mapArray) => {
@@ -176,7 +178,7 @@ function App() {
         for (const direction of ['up', 'down', 'left', 'right']) {  // Include left here
             if (possibleMoves[direction] === '|') {
                 if ((previousMove === 'up' && direction === 'down') || (previousMove === 'down' && direction === 'up')) {
-                    console.log('Cannot go back in the opposite direction');
+                    console.log('Cannot go back in the opposite direction!!');
                     continue;
                 }
                 console.log(`Moving ${direction} towards pipe`);
@@ -184,6 +186,18 @@ function App() {
                 return;
             }
         }
+
+        // for (const direction of ['up', 'down', 'left', 'right']) {  // Include left here
+        //     if (possibleMoves[direction] === '+') {
+        //         if ((previousMove === 'up' && direction === 'down') || (previousMove === 'down' && direction === 'up')) {
+        //             console.log('Cannot go back in the opposite direction!!!');
+        //             continue;
+        //         }
+        //         console.log(`Moving ${direction} towards pipe`);
+        //         move(direction);
+        //         return;
+        //     }
+        // }
 
         // Check and move to letters (A-Z)
         for (const direction of ['right', 'down', 'left']) {  // Include left here
