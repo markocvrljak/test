@@ -26,10 +26,16 @@ function App() {
     |      |
     +---D--+`;
 
+    const onTurnsMap = `  @---A---+
+          |
+  x-B-+   |
+      |   |
+      +---C`;
+
     const startChar = '@';
     const endChar = 'x';
 
-    const mapArray = intersectionsMap
+    const mapArray = onTurnsMap
         .split('\n')
         .map(row =>
             row.split('')
