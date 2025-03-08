@@ -97,7 +97,7 @@ function App() {
 
         // Check up character (row - 1)
         const upChar = row - 1 >= 0 ? mapArray[row - 1][col] : null;
-        setPossibleMoves({ ...possibleMoves, up: upChar });
+        // setPossibleMoves({ ...possibleMoves, up: upChar });
 
         // Check down character (row + 1)
         const downChar = row + 1 < mapArray.length ? mapArray[row + 1][col] : null;
@@ -105,11 +105,12 @@ function App() {
 
         // Check left character (col - 1)
         const leftChar = mapArray[row][col - 1];
-        setPossibleMoves({ ...possibleMoves, left: leftChar });
+        // setPossibleMoves({ ...possibleMoves, left: leftChar });
 
         // Check right character (col + 1)
         const rightChar = mapArray[row][col + 1];
-        setPossibleMoves({ ...possibleMoves, right: rightChar });
+        // setPossibleMoves({ ...possibleMoves, right: rightChar });
+        setPossibleMoves({ up: upChar, down: downChar, left: leftChar, right: rightChar })
 
         console.log('up char', upChar);
         console.log('down char', downChar);
