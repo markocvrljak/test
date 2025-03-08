@@ -12,13 +12,11 @@ check end
 */
 
 function App() {
-
     const basicMap = `  @---A---+
           |
   x-B-+   C
       |   |
       +---+`;
-
 
     const intersectionsMap = `  @
   | +-C--+
@@ -31,7 +29,7 @@ function App() {
     const startChar = '@';
     const endChar = 'x';
 
-    const mapArray = basicMap
+    const mapArray = intersectionsMap
         .split('\n')
         .map(row =>
             row.split('')
@@ -55,6 +53,7 @@ function App() {
 
     const [path, setPath] = useState([]);
     const [letters, setLetters] = useState([]);
+    const [previousMove, setPreviousMove] = useState(null);
 
     const validChars = {
         dash: '-',
@@ -74,6 +73,23 @@ function App() {
     }
 
     const move = (direction) => {
+        // If the direction is the opposite of the previous direction, we don't allow that move
+        if (previousMove) {
+            if ((previousMove === 'up' && direction === 'down') ||
+                (previousMove === 'down' && direction === 'up') ||
+                (previousMove === 'left' && direction === 'right') ||
+                (previousMove === 'right' && direction === 'left')) {
+                console.log('Cannot go back in the opposite direction');
+                return; // Prevent going back
+            }
+        }
+
+        const newPosition = moves[direction];
+        if (newPosition) {
+            setNextPosition(newPosition);
+            setPreviousMove(direction);  // Update the previous move
+            setPath(prevPath => [...prevPath, mapArray[newPosition.row][newPosition.col]]);
+        }
         switch (direction) {
             case 'up':
                 setNextPosition(moves.up);
@@ -97,18 +113,16 @@ function App() {
 
         // Check up character (row - 1)
         const upChar = row - 1 >= 0 ? mapArray[row - 1][col] : null;
-        // setPossibleMoves({ ...possibleMoves, up: upChar });
 
         // Check down character (row + 1)
         const downChar = row + 1 < mapArray.length ? mapArray[row + 1][col] : null;
 
         // Check left character (col - 1)
         const leftChar = mapArray[row][col - 1];
-        // setPossibleMoves({ ...possibleMoves, left: leftChar });
 
         // Check right character (col + 1)
         const rightChar = mapArray[row][col + 1];
-        // setPossibleMoves({ ...possibleMoves, right: rightChar });
+
         setPossibleMoves({ up: upChar, down: downChar, left: leftChar, right: rightChar })
 
         console.log('up char', upChar);
@@ -121,20 +135,81 @@ function App() {
         checkNextPosition(currentPosition, mapArray);
     }, [currentPosition]);
 
-
     console.log('current position', currentPosition.row, currentPosition.col);
     console.log('char on current position', mapArray[currentPosition.row][currentPosition.col]);
 
     console.log('possible moves', possibleMoves);
 
-    const bla = (possibleMoves) => {
-        for (const direction in possibleMoves) {
+    // Helper function to log the move and execute it
+    const logAndMove = (direction, char) => {
+        console.log(`Moving ${direction} towards "${char}"`);
+        move(direction);
+    };
+
+    // Function to check for a valid move and move accordingly
+    const checkAndMove = (direction, char) => {
+        if (possibleMoves[direction] === char) {
+            logAndMove(direction, char);
+            return true;
+        }
+        return false;
+    };
+
+    // Function to handle movement based on the path
+    const moveAccordingToPath = () => {
+        const currentChar = mapArray[currentPosition.row][currentPosition.col];
+
+        // Handle moving to '-' first (priority over '|')
+        for (const direction of ['right', 'left', 'up', 'down']) {
             if (possibleMoves[direction] === '-') {
-                console.log('dash');
-                move('right')
-                return; // Exit once a dash is found
+                logAndMove(direction, '-');
+                return;
             }
         }
+
+        // Handle moving to '|' if there are no '-' available
+        for (const direction of ['up', 'down']) {
+            if (possibleMoves[direction] === '|') {
+                // Don't go back to the direction you just came from
+                if ((previousMove === 'up' && direction === 'down') || (previousMove === 'down' && direction === 'up')) {
+                    console.log(`Cannot go back in the opposite direction`);
+                    continue;
+                }
+                logAndMove(direction, '|');
+                return;
+            }
+        }
+
+        // Handle moving to letters (A-Z)
+        for (const direction of ['right', 'down']) {
+            if (validChars.letters.includes(possibleMoves[direction])) {
+                console.log(`Found letter "${possibleMoves[direction]}", moving ${direction}`);
+                move(direction);
+                return;
+            }
+        }
+
+        // If at a letter, continue based on available valid moves ('-' or '|')
+        if (validChars.letters.includes(currentChar)) {
+            checkNextPosition(currentPosition, mapArray);
+            if (checkAndMove('right', '-')) return;
+            if (checkAndMove('left', '-')) return;
+        }
+
+        // Handle the '+' case: Move based on available pipes and dashes
+        if (currentChar === '+') {
+            if (checkAndMove('down', '|')) return;
+            if (checkAndMove('up', '|')) return;
+            if (checkAndMove('left', '-')) return;
+            if (checkAndMove('right', '-')) return;
+        }
+
+        // Check remaining moves with priority for dashes
+        if (checkAndMove('right', '-')) return;
+        if (checkAndMove('up', '+')) return;
+        if (checkAndMove('down', '+')) return;
+        if (checkAndMove('left', '+')) return;
+        if (checkAndMove('right', '+')) return;
     };
 
     return (
@@ -162,10 +237,13 @@ function App() {
                     ))}
                 </tbody>
             </table>
-            <button onClick={() => bla(possibleMoves)}>Start Walk</button>
+            <div>
+                <h3>Path Taken:</h3>
+                <p>{path.join(' → ')}</p>
+            </div>
+            <button onClick={moveAccordingToPath}>Start Walk</button>
             <button onClick={() => checkNextPosition(currentPosition, mapArray)}>Check next move</button>
             <button onClick={() => move('right')}>Move Left</button>
-
         </div>
     );
 }
