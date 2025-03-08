@@ -1,6 +1,6 @@
 import logo from './logo.svg';
 import './App.css';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 /*
 check current position
@@ -28,7 +28,7 @@ function App() {
     |      |
     +---D--+`;
 
-    const startChar = 'A';
+    const startChar = '@';
     const endChar = 'x';
 
     const mapArray = basicMap
@@ -101,7 +101,6 @@ function App() {
 
         // Check down character (row + 1)
         const downChar = row + 1 < mapArray.length ? mapArray[row + 1][col] : null;
-        setPossibleMoves({ ...possibleMoves, down: downChar });
 
         // Check left character (col - 1)
         const leftChar = mapArray[row][col - 1];
@@ -118,11 +117,25 @@ function App() {
         console.log('right char', rightChar);
     };
 
+    useEffect(() => {
+        checkNextPosition(currentPosition, mapArray);
+    }, [currentPosition]);
+
 
     console.log('current position', currentPosition.row, currentPosition.col);
     console.log('char on current position', mapArray[currentPosition.row][currentPosition.col]);
 
     console.log('possible moves', possibleMoves);
+
+    const bla = (possibleMoves) => {
+        for (const direction in possibleMoves) {
+            if (possibleMoves[direction] === '-') {
+                console.log('dash');
+                move('right')
+                return; // Exit once a dash is found
+            }
+        }
+    };
 
     return (
         <div>
@@ -149,8 +162,10 @@ function App() {
                     ))}
                 </tbody>
             </table>
-            <button onClick={() => setNextPosition(moves.down)}>Start Walk</button>
+            <button onClick={() => bla(possibleMoves)}>Start Walk</button>
             <button onClick={() => checkNextPosition(currentPosition, mapArray)}>Check next move</button>
+            <button onClick={() => move('right')}>Move Left</button>
+
         </div>
     );
 }
