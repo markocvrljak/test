@@ -45,7 +45,7 @@ function App() {
     const startChar = '@';
     const endChar = 'x';
 
-    const mapArray = intersectionsMap.split('\n').map(row => row.split(''));
+    const mapArray = basicMap.split('\n').map(row => row.split(''));
 
     const [currentPosition, setCurrentPosition] = useState(() => findStartPosition(mapArray, startChar));
     const [possibleMoves, setPossibleMoves] = useState({ up: false, down: false, left: false, right: false });
@@ -60,8 +60,8 @@ function App() {
         space: ' ',
         start: startChar,
         end: endChar,
-        letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
-    }
+        letters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+    };
 
     // Helper function to find the start position in the map
     function findStartPosition(array, startChar) {
@@ -86,7 +86,7 @@ function App() {
         setPossibleMoves({ up: upChar, down: downChar, left: leftChar, right: rightChar });
     };
 
-    // Check and move if the direction matches valid character
+    // Calculate and set movement directions
     const move = (direction) => {
         if (previousMove) {
             // Prevent moving back in the opposite direction
@@ -146,20 +146,26 @@ function App() {
     const moveAccordingToPath = () => {
         const currentChar = mapArray[currentPosition.row][currentPosition.col];
 
-        // Handle specific conditions based on the current character
-        if (currentChar === '-') {
+        // Handle movement for `-`
+        if (currentChar === validChars.dash) {
             if (possibleMoves.right !== ' ' && possibleMoves.right !== null && previousMove !== 'left') {
                 console.log('Moving right');
                 move('right');
                 return;
             }
+            if (possibleMoves.left !== ' ' && possibleMoves.left !== null && previousMove !== 'right') {
+                console.log('Moving left');
+                move('left');
+                return;
+            }
         }
 
-        for (const direction of ['up', 'down', 'left', 'right']) {
-            if (possibleMoves[direction] === '|') {
+        // Handle pipe `|`
+        for (const direction of ['up', 'down']) {
+            if (possibleMoves[direction] === validChars.pipe) {
                 if (previousMove === 'up' && direction === 'down' || previousMove === 'down' && direction === 'up') {
                     console.log('Cannot go back in the opposite direction');
-                    move('left');
+                    move('left'); // Edge case, move safely
                     continue;
                 }
                 console.log(`Moving ${direction} towards pipe`);
@@ -168,6 +174,7 @@ function App() {
             }
         }
 
+        // Handle letters (A-Z) as valid moves
         for (const direction of ['right', 'down', 'left']) {
             if (validChars.letters.includes(possibleMoves[direction])) {
                 console.log(`Found letter "${possibleMoves[direction]}", moving ${direction}`);
@@ -176,13 +183,13 @@ function App() {
             }
         }
 
-        // Handle movement based on the '+' character
-        if (currentChar === '+') {
-            if (checkAndMove('down', '|') || checkAndMove('up', '|') || checkAndMove('left', '-') || checkAndMove('right', '-')) return;
+        // Handle movement based on the `+` character
+        if (currentChar === validChars.plus) {
+            if (checkAndMove('down', validChars.pipe) || checkAndMove('up', validChars.pipe) || checkAndMove('left', validChars.dash) || checkAndMove('right', validChars.dash)) return;
         }
 
         // Default movement priorities
-        if (checkAndMove('right', '-') || checkAndMove('left', '-') || checkAndMove('up', '+') || checkAndMove('down', '+')) return;
+        if (checkAndMove('right', validChars.dash) || checkAndMove('left', validChars.dash) || checkAndMove('up', validChars.plus) || checkAndMove('down', validChars.plus)) return;
     };
 
     return (
