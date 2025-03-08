@@ -11,6 +11,7 @@ validate
 check end
 */
 
+
 function App() {
     const basicMap = `  @---A---+
           |
@@ -44,22 +45,10 @@ function App() {
     const startChar = '@';
     const endChar = 'x';
 
-    const mapArray = basicMap.split('\n').map(row => row.split(''));
+    const mapArray = intersectionsMap.split('\n').map(row => row.split(''));
 
-    function findStartPosition(array, start) {
-        for (let row = 0; row < array.length; row++) {
-            for (let col = 0; col < array[row].length; col++) {
-                if (array[row][col] === start) {
-                    return { row, col };
-                }
-            }
-        }
-        return null;
-    };
-
-    const [currentPosition, setNextPosition] = useState(() => findStartPosition(mapArray, startChar));
+    const [currentPosition, setCurrentPosition] = useState(() => findStartPosition(mapArray, startChar));
     const [possibleMoves, setPossibleMoves] = useState({ up: false, down: false, left: false, right: false });
-
     const [path, setPath] = useState([]);
     const [letters, setLetters] = useState([]);
     const [previousMove, setPreviousMove] = useState(null);
@@ -74,85 +63,78 @@ function App() {
         letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
     }
 
-    const moves = {
-        up: { row: currentPosition.row - 1, col: currentPosition.col },
-        down: { row: currentPosition.row + 1, col: currentPosition.col },
-        left: { row: currentPosition.row, col: currentPosition.col - 1 },
-        right: { row: currentPosition.row, col: currentPosition.col + 1 },
+    // Helper function to find the start position in the map
+    function findStartPosition(array, startChar) {
+        for (let row = 0; row < array.length; row++) {
+            for (let col = 0; col < array[row].length; col++) {
+                if (array[row][col] === startChar) {
+                    return { row, col };
+                }
+            }
+        }
+        return null;
     }
 
+    // Calculate possible moves based on the current position
+    const checkNextPosition = (currentPosition, mapArray) => {
+        const { row, col } = currentPosition;
+        const upChar = row - 1 >= 0 ? mapArray[row - 1][col] : null;
+        const downChar = row + 1 < mapArray.length ? mapArray[row + 1][col] : null;
+        const leftChar = mapArray[row][col - 1];
+        const rightChar = mapArray[row][col + 1];
+
+        setPossibleMoves({ up: upChar, down: downChar, left: leftChar, right: rightChar });
+    };
+
+    // Check and move if the direction matches valid character
     const move = (direction) => {
-        // Prevent moving back in the opposite direction (only allow the direction where the previous move came)
         if (previousMove) {
-            // If we are trying to go in the opposite direction of the previous move, prevent it
-            if ((previousMove === 'up' && direction === 'down') ||
+            // Prevent moving back in the opposite direction
+            if (
+                (previousMove === 'up' && direction === 'down') ||
                 (previousMove === 'down' && direction === 'up') ||
-                (previousMove === 'left' && direction === 'right')) {
+                (previousMove === 'left' && direction === 'right')
+            ) {
                 console.log('Cannot go back in the opposite direction!');
-                move('left');
-                return; // Prevent going back in the opposite direction
+                move('left'); // Default to a safe direction
+                return;
             }
         }
 
         const newPosition = moves[direction];
         if (newPosition) {
-            setNextPosition(newPosition);
-            setPreviousMove(direction);  // Update the previous move to the current one
+            setCurrentPosition(newPosition);
+            setPreviousMove(direction);
             setPath(prevPath => {
                 const newPath = [...prevPath, mapArray[newPosition.row][newPosition.col]];
-                // Check if the current position is a letter and add it to the letters state
                 const currentChar = mapArray[newPosition.row][newPosition.col];
+
+                // Update letters state if we encounter a new letter
                 if (validChars.letters.includes(currentChar)) {
-                    // Check if the letter is already in the letters state
                     setLetters(prevLetters => {
                         if (!prevLetters.includes(currentChar)) {
-                            return [...prevLetters, currentChar]; // Only add if not already in the state
+                            return [...prevLetters, currentChar];
                         }
-                        return prevLetters; // Return the same array if it's already in the state
+                        return prevLetters;
                     });
                 }
+
                 return newPath;
             });
         }
     };
 
-
-
-
-
-    const checkNextPosition = (currentPosition, mapArray) => {
-        const { row, col } = currentPosition;
-
-        // Check up character (row - 1)
-        const upChar = row - 1 >= 0 ? mapArray[row - 1][col] : null;
-
-        // Check down character (row + 1)
-        const downChar = row + 1 < mapArray.length ? mapArray[row + 1][col] : null;
-
-        // Check left character (col - 1)
-        const leftChar = mapArray[row][col - 1];
-
-        // Check right character (col + 1)
-        const rightChar = mapArray[row][col + 1];
-
-        setPossibleMoves({ up: upChar, down: downChar, left: leftChar, right: rightChar });
-
-        console.log('up char', upChar);
-        console.log('down char', downChar);
-        console.log('left char', leftChar);
-        console.log('right char', rightChar);
+    const moves = {
+        up: { row: currentPosition.row - 1, col: currentPosition.col },
+        down: { row: currentPosition.row + 1, col: currentPosition.col },
+        left: { row: currentPosition.row, col: currentPosition.col - 1 },
+        right: { row: currentPosition.row, col: currentPosition.col + 1 },
     };
 
     useEffect(() => {
         checkNextPosition(currentPosition, mapArray);
     }, [currentPosition]);
 
-    console.log('current position', currentPosition.row, currentPosition.col);
-    console.log('char on current position', mapArray[currentPosition.row][currentPosition.col]);
-
-    console.log('possible moves', possibleMoves);
-
-    // Function to check for a valid move and move accordingly
     const checkAndMove = (direction, char) => {
         if (possibleMoves[direction] === char) {
             move(direction);
@@ -161,26 +143,22 @@ function App() {
         return false;
     };
 
-    // Function to handle movement based on the path
     const moveAccordingToPath = () => {
         const currentChar = mapArray[currentPosition.row][currentPosition.col];
 
-        // If current position is '-' (dash), avoid moving in the opposite direction
+        // Handle specific conditions based on the current character
         if (currentChar === '-') {
-            if (possibleMoves.right !== ' ' && possibleMoves.right !== null) {
-                if (previousMove !== 'left') {
-                    console.log('Moving right towards', possibleMoves.right);
-                    move('right');
-                    return;
-                }
+            if (possibleMoves.right !== ' ' && possibleMoves.right !== null && previousMove !== 'left') {
+                console.log('Moving right');
+                move('right');
+                return;
             }
         }
 
-        // If we're on a pipe ('|'), prioritize moving up or down
-        for (const direction of ['up', 'down', 'left', 'right']) {  // Include left here
+        for (const direction of ['up', 'down', 'left', 'right']) {
             if (possibleMoves[direction] === '|') {
-                if ((previousMove === 'up' && direction === 'down') || (previousMove === 'down' && direction === 'up')) {
-                    console.log('Cannot go back in the opposite direction!!');
+                if (previousMove === 'up' && direction === 'down' || previousMove === 'down' && direction === 'up') {
+                    console.log('Cannot go back in the opposite direction');
                     move('left');
                     continue;
                 }
@@ -190,20 +168,7 @@ function App() {
             }
         }
 
-        // for (const direction of ['up', 'down', 'left', 'right']) {  // Include left here
-        //     if (possibleMoves[direction] === '+') {
-        //         if ((previousMove === 'up' && direction === 'down') || (previousMove === 'down' && direction === 'up')) {
-        //             console.log('Cannot go back in the opposite direction!!!');
-        //             continue;
-        //         }
-        //         console.log(`Moving ${direction} towards pipe`);
-        //         move(direction);
-        //         return;
-        //     }
-        // }
-
-        // Check and move to letters (A-Z)
-        for (const direction of ['right', 'down', 'left']) {  // Include left here
+        for (const direction of ['right', 'down', 'left']) {
             if (validChars.letters.includes(possibleMoves[direction])) {
                 console.log(`Found letter "${possibleMoves[direction]}", moving ${direction}`);
                 move(direction);
@@ -211,21 +176,14 @@ function App() {
             }
         }
 
-        // Handle the '+' case: Move based on available pipes and dashes
+        // Handle movement based on the '+' character
         if (currentChar === '+') {
-            if (checkAndMove('down', '|')) return;
-            if (checkAndMove('up', '|')) return;
-            if (checkAndMove('left', '-')) return;
-            if (checkAndMove('right', '-')) return;
+            if (checkAndMove('down', '|') || checkAndMove('up', '|') || checkAndMove('left', '-') || checkAndMove('right', '-')) return;
         }
 
-        // Check remaining moves with priority for dashes and include left here
-        if (checkAndMove('right', '-')) return;
-        if (checkAndMove('left', '-')) return;  // Add left here
-        if (checkAndMove('up', '+')) return;
-        if (checkAndMove('down', '+')) return;
+        // Default movement priorities
+        if (checkAndMove('right', '-') || checkAndMove('left', '-') || checkAndMove('up', '+') || checkAndMove('down', '+')) return;
     };
-
 
     return (
         <div>
@@ -240,9 +198,7 @@ function App() {
                                         border: '1px solid black',
                                         padding: '8px',
                                         textAlign: 'center',
-                                        backgroundColor: rowIndex === currentPosition.row
-                                            && cellIndex === currentPosition.col
-                                            ? 'yellow' : 'white',
+                                        backgroundColor: rowIndex === currentPosition.row && cellIndex === currentPosition.col ? 'yellow' : 'white',
                                     }}
                                 >
                                     {cell}
