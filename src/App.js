@@ -42,6 +42,10 @@ function App() {
              |
              x`;
 
+    const ignoreAfterEndMap = `  @-A--+
+       |
+       +-B--x-C--D`;
+
     const startChar = '@';
     const endChar = 'x';
 
