@@ -173,7 +173,7 @@ function App() {
         }
 
         // If we're on a pipe ('|'), prioritize moving up or down
-        for (const direction of ['up', 'down']) {
+        for (const direction of ['up', 'down', 'left', 'right']) {  // Include left here
             if (possibleMoves[direction] === '|') {
                 if ((previousMove === 'up' && direction === 'down') || (previousMove === 'down' && direction === 'up')) {
                     console.log('Cannot go back in the opposite direction');
@@ -186,7 +186,7 @@ function App() {
         }
 
         // Check and move to letters (A-Z)
-        for (const direction of ['right', 'down']) {
+        for (const direction of ['right', 'down', 'left']) {  // Include left here
             if (validChars.letters.includes(possibleMoves[direction])) {
                 console.log(`Found letter "${possibleMoves[direction]}", moving ${direction}`);
                 move(direction);
@@ -195,19 +195,20 @@ function App() {
         }
 
         // Handle the '+' case: Move based on available pipes and dashes
-        // if (currentChar === '+') {
-        //     if (checkAndMove('down', '|')) return;
-        //     if (checkAndMove('up', '|')) return;
-        //     if (checkAndMove('left', '-')) return;
-        //     if (checkAndMove('right', '-')) return;
-        // }
+        if (currentChar === '+') {
+            if (checkAndMove('down', '|')) return;
+            if (checkAndMove('up', '|')) return;
+            if (checkAndMove('left', '-')) return;
+            if (checkAndMove('right', '-')) return;
+        }
 
-        // Check remaining moves with priority for dashes
+        // Check remaining moves with priority for dashes and include left here
         if (checkAndMove('right', '-')) return;
+        if (checkAndMove('left', '-')) return;  // Add left here
         if (checkAndMove('up', '+')) return;
         if (checkAndMove('down', '+')) return;
-        if (checkAndMove('left', '+')) return;
     };
+
 
     return (
         <div>
@@ -242,9 +243,7 @@ function App() {
                 <h3>Collected Letters:</h3>
                 <p>{letters.join(', ')}</p>
             </div>
-            <button onClick={moveAccordingToPath}>Start Walk</button>
-            <button onClick={() => checkNextPosition(currentPosition, mapArray)}>Check next move</button>
-            <button onClick={() => move('right')}>Move Left</button>
+            <button onClick={moveAccordingToPath}>Move</button>
         </div>
     );
 }
