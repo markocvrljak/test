@@ -49,10 +49,11 @@ function App() {
     const startChar = '@';
     const endChar = 'x';
 
-    const mapArray = intersectionsMap.split('\n').map(row => row.split(''));
+    const mapArray = basicMap.split('\n').map(row => row.split(''));
 
     const [currentPosition, setCurrentPosition] = useState(() => findStartPosition(mapArray, startChar));
     const [possibleMoves, setPossibleMoves] = useState({ up: false, down: false, left: false, right: false });
+
     const [path, setPath] = useState([]);
     const [letters, setLetters] = useState([]);
     const [previousMove, setPreviousMove] = useState(null);
@@ -61,7 +62,6 @@ function App() {
         dash: '-',
         plus: '+',
         pipe: '|',
-        space: ' ',
         start: startChar,
         end: endChar,
         letters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
