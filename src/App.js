@@ -82,21 +82,22 @@ function App() {
     }
 
     const move = (direction) => {
-        // If the direction is the opposite of the previous direction, we don't allow that move
+        // Prevent moving back in the opposite direction (only allow the direction where the previous move came)
         if (previousMove) {
+            // If we are trying to go in the opposite direction of the previous move, prevent it
             if ((previousMove === 'up' && direction === 'down') ||
                 (previousMove === 'down' && direction === 'up') ||
-                (previousMove === 'left' && direction === 'right') ||
-                (previousMove === 'right' && direction === 'left')) {
+                (previousMove === 'left' && direction === 'right')) {
                 console.log('Cannot go back in the opposite direction!');
-                return; // Prevent going back
+                move('left');
+                return; // Prevent going back in the opposite direction
             }
         }
 
         const newPosition = moves[direction];
         if (newPosition) {
             setNextPosition(newPosition);
-            setPreviousMove(direction);  // Update the previous move
+            setPreviousMove(direction);  // Update the previous move to the current one
             setPath(prevPath => {
                 const newPath = [...prevPath, mapArray[newPosition.row][newPosition.col]];
                 // Check if the current position is a letter and add it to the letters state
@@ -113,7 +114,8 @@ function App() {
                 return newPath;
             });
         }
-    }
+    };
+
 
 
 
@@ -179,6 +181,7 @@ function App() {
             if (possibleMoves[direction] === '|') {
                 if ((previousMove === 'up' && direction === 'down') || (previousMove === 'down' && direction === 'up')) {
                     console.log('Cannot go back in the opposite direction!!');
+                    move('left');
                     continue;
                 }
                 console.log(`Moving ${direction} towards pipe`);
