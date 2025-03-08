@@ -97,12 +97,19 @@ function App() {
                 // Check if the current position is a letter and add it to the letters state
                 const currentChar = mapArray[newPosition.row][newPosition.col];
                 if (validChars.letters.includes(currentChar)) {
-                    setLetters(prevLetters => [...prevLetters, currentChar]);
+                    // Check if the letter is already in the letters state
+                    setLetters(prevLetters => {
+                        if (!prevLetters.includes(currentChar)) {
+                            return [...prevLetters, currentChar]; // Only add if not already in the state
+                        }
+                        return prevLetters; // Return the same array if it's already in the state
+                    });
                 }
                 return newPath;
             });
         }
     }
+
 
     const checkNextPosition = (currentPosition, mapArray) => {
         const { row, col } = currentPosition;
@@ -183,12 +190,12 @@ function App() {
         }
 
         // Handle the '+' case: Move based on available pipes and dashes
-        if (currentChar === '+') {
-            if (checkAndMove('down', '|')) return;
-            if (checkAndMove('up', '|')) return;
-            if (checkAndMove('left', '-')) return;
-            if (checkAndMove('right', '-')) return;
-        }
+        // if (currentChar === '+') {
+        //     if (checkAndMove('down', '|')) return;
+        //     if (checkAndMove('up', '|')) return;
+        //     if (checkAndMove('left', '-')) return;
+        //     if (checkAndMove('right', '-')) return;
+        // }
 
         // Check remaining moves with priority for dashes
         if (checkAndMove('right', '-')) return;
