@@ -48,11 +48,11 @@ function App() {
 
     useEffect(() => {
         loadMap();
-    }, []); // Run only on initial render
+    }, []); // Run only on initial render to load the map
 
     useEffect(() => {
-        checkNextPosition(currentPosition, mapArray);
-    }, [currentPosition]);
+        handleNextPossibleMoves(currentPosition, mapArray);
+    }, [currentPosition]); // Run whenever currentPosition changes
 
     useEffect(() => {
         // Check if all values in possibleMoves are falsy (null, false, undefined)
@@ -72,7 +72,7 @@ function App() {
         if (startPos) {
             setCurrentPosition(startPos);
 
-            const initialMoves = getPossibleMoves(startPos, mapArray);
+            const initialMoves = getValidMovement(startPos, mapArray);
             const validMoves = validatePossibleMoves(initialMoves);
             const finalMoves = removeBacktrackingMove(validMoves);
 
@@ -102,7 +102,6 @@ function App() {
         right: { row: currentPosition.row, col: currentPosition.col + 1 },
     };
 
-    // Helper function to find the start position in the map
     function findStartPosition(array, startChar) {
         for (let row = 0; row < array.length; row++) {
             for (let col = 0; col < array[row].length; col++) {
@@ -114,22 +113,17 @@ function App() {
         return null;
     }
 
-    // Calculate possible moves based on the current position
-    const checkNextPosition = (currentPosition, mapArray) => {
-        const possibleMoves = getPossibleMoves(currentPosition, mapArray);
+    // Find possible moves based on the current position
+    const handleNextPossibleMoves = (currentPosition, mapArray) => {
+        const allPossibleMoves = getValidMovement(currentPosition, mapArray);
+        const validMoves = validatePossibleMoves(allPossibleMoves);
+        const finalMoves = removeBacktrackingMove(validMoves);
 
-        // Validate possible moves
-        let validMoves = validatePossibleMoves(possibleMoves);
-
-        // Remove the backtracking move if applicable
-        validMoves = removeBacktrackingMove(validMoves);
-
-        // Set the final valid moves
-        setPossibleMoves(validMoves);
+        setPossibleMoves(finalMoves);
     };
 
-    // Function to get possible moves based on the current position
-    const getPossibleMoves = (currentPosition, mapArray) => {
+    // Get possible moves based on the current position
+    const getValidMovement = (currentPosition, mapArray) => {
         const { row, col } = currentPosition;
 
         return {
@@ -140,7 +134,7 @@ function App() {
         };
     };
 
-    // Function to validate possible moves based on valid characters
+    // Validate possible moves based on valid characters
     const validatePossibleMoves = (possibleMoves) => {
         const validSet = Object.values(validChars).flat();
 
@@ -149,7 +143,7 @@ function App() {
         );
     };
 
-    // Function to remove the backtracking move based on the previous move
+    // Remove the backtracking move based on the previous move
     const removeBacktrackingMove = (validMoves) => {
         const opposite = {
             up: "down",
@@ -165,7 +159,7 @@ function App() {
         return validMoves;
     };
 
-    // Calculate and set movement directions
+    // Calculate and update the new position and path based on movement directions
     const changePositionAndCollectPath = (direction, source) => {
         const newPosition = moves[direction];
         const currentChar = mapArray[newPosition.row][newPosition.col];
@@ -210,11 +204,12 @@ function App() {
         }
     };
 
-    // Function to check if the coordinates have already been visited
+    // Check if the coordinates have already been visited
     const isRevisitedPosition = (newPosition) => {
         return path.some(position => position.row === newPosition.row && position.col === newPosition.col);
     };
 
+    // Main function to determine the next move and how to proceed
     const moveAccordingToPath = () => {
         const currentChar = mapArray[currentPosition.row][currentPosition.col];
 
@@ -224,14 +219,14 @@ function App() {
             return;
         }
 
-        // Check if we should move based on previous move and current position
+        // Check if we should move based on previous move and current position character
         if (shouldMoveBasedOnPreviousMove(currentChar)) return;
 
-        // Try to move based on predefined movement priorities
+        // Try to move based on predefined movement priorities and next possible moves
         if (attemptMoveByPriority()) return;
     };
 
-    // Handle dash movement after a down move
+    // Handle specific case where previous move was up or down and current position is dash
     const continueOnIntersection = () => {
         for (const direction of ['right', 'left', 'up', 'down']) {
             if (possibleMoves[direction] === validChars.dash && isRevisitedPosition(moves[direction])) {
@@ -244,7 +239,7 @@ function App() {
         changePositionAndCollectPath('down', "continueOnIntersection");
     };
 
-    // Check if we should move based on previous move and current position
+    // Check if we should move based on previous move and current position character
     const shouldMoveBasedOnPreviousMove = (currentChar) => {
         const moveMap = {
             down: validChars.pipe,
@@ -261,7 +256,7 @@ function App() {
         return false;
     };
 
-    // Try to move according to predefined movement priorities
+    // Try to move based on predefined movement priorities and next possible moves
     const attemptMoveByPriority = () => {
         const movePriority = [
             ["right", "left"].map(direction => ({ direction, char: validChars.dash })),
