@@ -35,10 +35,19 @@ function App() {
        |
        +-B--x-C--D`;
 
+    const mapArray = intersectionsMap.split('\n').map(row => row.split(''));
+
     const startChar = '@';
     const endChar = 'x';
 
-    const mapArray = intersectionsMap.split('\n').map(row => row.split(''));
+    const validChars = {
+        dash: '-',
+        plus: '+',
+        pipe: '|',
+        letters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+        start: startChar,
+        end: endChar,
+    };
 
     const [currentPosition, setCurrentPosition] = useState(() => findStartPosition(mapArray, startChar));
     const [possibleMoves, setPossibleMoves] = useState({ up: false, down: false, left: false, right: false });
@@ -46,13 +55,22 @@ function App() {
     const [letters, setLetters] = useState([]);
     const [previousMove, setPreviousMove] = useState(null);
 
-    useEffect(() => {
-        loadMap();
-    }, []); // Run only on initial render to load the map
+    const moves = {
+        up: { row: currentPosition.row - 1, col: currentPosition.col },
+        down: { row: currentPosition.row + 1, col: currentPosition.col },
+        left: { row: currentPosition.row, col: currentPosition.col - 1 },
+        right: { row: currentPosition.row, col: currentPosition.col + 1 },
+    };
 
     useEffect(() => {
+        // Run only on initial render to load the map
+        loadMap();
+    }, []);
+
+    useEffect(() => {
+        // Run whenever currentPosition changes
         handleNextPossibleMoves(currentPosition, mapArray);
-    }, [currentPosition]); // Run whenever currentPosition changes
+    }, [currentPosition]);
 
     useEffect(() => {
         // Check if all values in possibleMoves are falsy (null, false, undefined)
@@ -84,22 +102,6 @@ function App() {
                 initialLogTriggered.current = true;
             }
         }
-    };
-
-    const validChars = {
-        dash: '-',
-        plus: '+',
-        pipe: '|',
-        letters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
-        start: startChar,
-        end: endChar,
-    };
-
-    const moves = {
-        up: { row: currentPosition.row - 1, col: currentPosition.col },
-        down: { row: currentPosition.row + 1, col: currentPosition.col },
-        left: { row: currentPosition.row, col: currentPosition.col - 1 },
-        right: { row: currentPosition.row, col: currentPosition.col + 1 },
     };
 
     function findStartPosition(array, startChar) {
