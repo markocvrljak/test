@@ -53,10 +53,13 @@ function App() {
 
     const [currentPosition, setCurrentPosition] = useState(() => findStartPosition(mapArray, startChar));
     const [possibleMoves, setPossibleMoves] = useState({ up: false, down: false, left: false, right: false });
-
     const [path, setPath] = useState([]);
     const [letters, setLetters] = useState([]);
     const [previousMove, setPreviousMove] = useState(null);
+
+    useEffect(() => {
+        checkNextPosition(currentPosition, mapArray);
+    }, [currentPosition]);
 
     const validChars = {
         dash: '-',
@@ -65,6 +68,13 @@ function App() {
         start: startChar,
         end: endChar,
         letters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+    };
+
+    const moves = {
+        up: { row: currentPosition.row - 1, col: currentPosition.col },
+        down: { row: currentPosition.row + 1, col: currentPosition.col },
+        left: { row: currentPosition.row, col: currentPosition.col - 1 },
+        right: { row: currentPosition.row, col: currentPosition.col + 1 },
     };
 
     // Helper function to find the start position in the map
@@ -143,17 +153,6 @@ function App() {
         }
     };
 
-    const moves = {
-        up: { row: currentPosition.row - 1, col: currentPosition.col },
-        down: { row: currentPosition.row + 1, col: currentPosition.col },
-        left: { row: currentPosition.row, col: currentPosition.col - 1 },
-        right: { row: currentPosition.row, col: currentPosition.col + 1 },
-    };
-
-    useEffect(() => {
-        checkNextPosition(currentPosition, mapArray);
-    }, [currentPosition]);
-
     const checkAndMove = (direction, char) => {
         if (possibleMoves[direction] === char) {
             changePositionAndCollectPath(direction);
@@ -165,65 +164,96 @@ function App() {
     const moveAccordingToPath = () => {
         const currentChar = mapArray[currentPosition.row][currentPosition.col];
 
-        // Default movement priorities
+        // First try to move according to the move priorities
+        if (attemptMovementByPriority()) return;
+
+        // Handle dash movement
+        if (currentChar === validChars.dash) {
+            if (moveDash()) return;
+        }
+
+        // Handle pipe movement
+        if (movePipe()) return;
+
+        // Handle letter movement
+        if (moveLetters()) return;
+
+        // Handle plus intersection movement
+        if (currentChar === validChars.plus) {
+            if (movePlusIntersection()) return;
+        }
+    };
+
+    // Function to handle movement based on the movement priority
+    const attemptMovementByPriority = () => {
         const movePriority = [
-            { direction: "right", char: validChars.dash },
-            { direction: "left", char: validChars.dash },
-            { direction: "up", char: validChars.plus },
-            { direction: "down", char: validChars.plus }
-        ];
+            ["right", "left"].map(direction => ({ direction, char: validChars.dash })),
+            ["up", "down"].map(direction => ({ direction, char: validChars.pipe })),
+            ["up", "down", "right", "left"].map(direction => ({ direction, char: validChars.plus })),
+            ["up", "down", "right", "left"].map(direction => ({ direction, char: validChars.letters })),
+        ].flat();
 
         for (const { direction, char } of movePriority) {
-            if (checkAndMove(direction, char)) return;
+            if (checkAndMove(direction, char)) return true;
         }
+        return false;
+    };
 
-        // Handle movement for `-`
-        if (currentChar === validChars.dash) {
-            if (possibleMoves.right !== false && possibleMoves.right !== null && previousMove !== 'left') {
-                console.log('Moving right');
-                changePositionAndCollectPath('right');
-                return;
-            }
-            if (possibleMoves.left !== false && possibleMoves.left !== null && previousMove !== 'right') {
-                console.log('Moving left');
-                changePositionAndCollectPath('left');
-                return;
-            }
+    // Function to handle dash movement
+    const moveDash = () => {
+        if (possibleMoves.right !== false && possibleMoves.right !== null) {
+            console.log('Moving right');
+            changePositionAndCollectPath('right');
+            return true;
         }
+        if (possibleMoves.left !== false && possibleMoves.left !== null) {
+            console.log('Moving left');
+            changePositionAndCollectPath('left');
+            return true;
+        }
+        return false;
+    };
 
-        // Handle pipe `|`
+    // Function to handle pipe movement
+    const movePipe = () => {
         for (const direction of ['up', 'down']) {
             if (possibleMoves[direction] === validChars.pipe) {
                 if (previousMove === 'up' && direction === 'down' || previousMove === 'down' && direction === 'up') {
                     console.log('Cannot go back in the opposite direction');
-                    changePositionAndCollectPath('left'); // Edge case, move safely
-                    continue;
+                    changePositionAndCollectPath('left'); // Move safely
+                    return true;
                 }
                 console.log(`Moving ${direction} towards pipe`);
                 changePositionAndCollectPath(direction);
-                return;
+                return true;
             }
         }
+        return false;
+    };
 
-        // Handle letters (A-Z) as valid moves
-        for (const direction of ['right', 'down', 'left']) {
+    // Function to handle movement when a letter is found
+    const moveLetters = () => {
+        for (const direction of ['right', 'down', 'up', 'left']) {
             if (validChars.letters.includes(possibleMoves[direction])) {
                 console.log(`Found letter "${possibleMoves[direction]}", moving ${direction}`);
                 changePositionAndCollectPath(direction);
-                return;
+                return true;
             }
         }
-
-        // Handle `+` intersections
-        if (currentChar === validChars.plus) {
-            if (possibleMoves.right === '-' || possibleMoves.left === '-') {
-                if (possibleMoves.right === '-') return changePositionAndCollectPath('right');
-                if (possibleMoves.left === '-') return changePositionAndCollectPath('left');
-            }
-            if (possibleMoves.up === '|') return changePositionAndCollectPath('up');
-            if (possibleMoves.down === '|') return changePositionAndCollectPath('down');
-        }
+        return false;
     };
+
+    // Function to handle movement at plus intersections
+    const movePlusIntersection = () => {
+        if (possibleMoves.right === '-' || possibleMoves.left === '-') {
+            if (possibleMoves.right === '-') return changePositionAndCollectPath('right');
+            if (possibleMoves.left === '-') return changePositionAndCollectPath('left');
+        }
+        if (possibleMoves.up === '|') return changePositionAndCollectPath('up');
+        if (possibleMoves.down === '|') return changePositionAndCollectPath('down');
+        return false;
+    };
+
 
     console.log('possibleMoves', possibleMoves);
     console.log('currentPosition', currentPosition);
