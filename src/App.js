@@ -93,18 +93,6 @@ function App() {
         setPossibleMoves(validMoves);
     };
 
-    // Function to get possible moves based on the current position
-    const getPossibleMoves = (currentPosition, mapArray) => {
-        const { row, col } = currentPosition;
-
-        return {
-            up: row - 1 >= 0 ? mapArray[row - 1][col] : null,
-            down: row + 1 < mapArray.length ? mapArray[row + 1][col] : null,
-            left: mapArray[row][col - 1],
-            right: mapArray[row][col + 1],
-        };
-    };
-
     // Function to validate possible moves based on valid characters
     const validatePossibleMoves = (possibleMoves) => {
         const validSet = Object.values(validChars).flat();
@@ -128,6 +116,18 @@ function App() {
         }
 
         return validMoves;
+    };
+
+    // Function to get possible moves based on the current position
+    const getPossibleMoves = (currentPosition, mapArray) => {
+        const { row, col } = currentPosition;
+
+        return {
+            up: row - 1 >= 0 ? mapArray[row - 1][col] : null,
+            down: row + 1 < mapArray.length ? mapArray[row + 1][col] : null,
+            left: mapArray[row][col - 1],
+            right: mapArray[row][col + 1],
+        };
     };
 
     // Calculate and set movement directions
@@ -172,24 +172,42 @@ function App() {
     const moveAccordingToPath = () => {
         const currentChar = mapArray[currentPosition.row][currentPosition.col];
 
+        // Try to move based on predefined movement priorities
+        if (attemptMoveByPriority()) {
+            console.log('attemptMoveByPriority');
+            console.log('possibleMoves', possibleMoves);
+            console.log('previousMove', previousMove);
+            return;
+        };
+
         // Check if we should move based on previous move and current position
-        if (shouldMoveBasedOnPreviousMove(currentChar)) return;
+        if (keepMovementDirection(currentChar)) {
+            console.log('keepMovementDirection');
+            console.log('possibleMoves', possibleMoves);
+            console.log('previousMove', previousMove);
+            return;
+        };
 
         // Handle specific case where previous move was down and current position is dash
         if (previousMove === 'down' && currentChar === validChars.dash) {
-            handleDashAfterDown(currentChar);
+            continueOnIntersection(currentChar);
+            console.log('continueOnIntersection');
+            console.log('possibleMoves', possibleMoves);
+            console.log('previousMove', previousMove);
             return;
         }
 
         // Try to move according to valid letters in possible moves
-        if (handleLetterMovement()) return;
-
-        // Try to move based on predefined movement priorities
-        if (attemptMoveByPriority()) return;
+        if (lettersOnTurns()) {
+            console.log('lettersOnTurns');
+            console.log('possibleMoves', possibleMoves);
+            console.log('previousMove', previousMove);
+            return;
+        };
     };
 
     // Check if we should move based on previous move and current position
-    const shouldMoveBasedOnPreviousMove = (currentChar) => {
+    const keepMovementDirection = (currentChar) => {
         const moveMap = {
             down: validChars.pipe,
             up: validChars.pipe,
@@ -198,7 +216,7 @@ function App() {
         };
 
         if (moveMap[previousMove] === currentChar) {
-            console.log(`Previous move was ${previousMove}, moving ${previousMove}`);
+            console.log(`Previous move was ${previousMove}, moving ${previousMove} from char ${currentChar}`);
             changePositionAndCollectPath(previousMove);
             return true;
         }
@@ -206,11 +224,11 @@ function App() {
     };
 
     // Handle dash movement after a down move
-    const handleDashAfterDown = () => {
-        for (const direction of ['right', 'left']) {
+    const continueOnIntersection = () => {
+        for (const direction of ['right', 'left', 'up', 'down']) {
             if (possibleMoves[direction] === validChars.dash && isRevisitedPosition(moves[direction])) {
                 console.log('Revisiting dash, moving down to avoid loop');
-                changePositionAndCollectPath('down');  // Avoid revisiting the dash
+                changePositionAndCollectPath(direction);  // Avoid revisiting the dash
                 return;
             }
         }
@@ -219,7 +237,7 @@ function App() {
     };
 
     // Handle movement when encountering letters
-    const handleLetterMovement = () => {
+    const lettersOnTurns = () => {
         for (const direction of ['right', 'down', 'up', 'left']) {
             if (validChars.letters.includes(possibleMoves[direction])) {
                 console.log(`Found letter "${possibleMoves[direction]}", moving ${direction}`);
@@ -245,9 +263,9 @@ function App() {
         return false;
     };
 
-    console.log('possibleMoves', possibleMoves);
-    console.log('currentPosition', currentPosition);
-    console.log('previousMove', previousMove);
+    // console.log('possibleMoves', possibleMoves);
+    // console.log('currentPosition', currentPosition);
+    // console.log('previousMove', previousMove);
 
     return (
         <div>
