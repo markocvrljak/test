@@ -1,6 +1,5 @@
-import logo from './logo.svg';
 import './App.css';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 function App() {
     const basicMap = `  @---A---+
@@ -36,29 +35,54 @@ function App() {
        |
        +-B--x-C--D`;
 
-    const startChar = '@';
-    const endChar = 'x';
-
     const mapArray = intersectionsMap.split('\n').map(row => row.split(''));
 
-    const [currentPosition, setCurrentPosition] = useState(() => findStartPosition(mapArray, startChar));
-    const [possibleMoves, setPossibleMoves] = useState({ up: false, down: false, left: false, right: false });
-    const [path, setPath] = useState([]);
-    const [letters, setLetters] = useState([]);
-    const [previousMove, setPreviousMove] = useState(null);
-
-    useEffect(() => {
-        checkNextPosition(currentPosition, mapArray);
-    }, [currentPosition]);
+    // --------------------------------
 
     const validChars = {
         dash: '-',
         plus: '+',
         pipe: '|',
         letters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
-        start: startChar,
-        end: endChar,
+        start: '@',
+        end: 'x',
     };
+
+    const [currentPosition, setCurrentPosition] = useState(() => findStartPosition(mapArray, validChars.start));
+    const [possibleMoves, setPossibleMoves] = useState({ up: false, down: false, left: false, right: false });
+    const [path, setPath] = useState([]);
+    const [letters, setLetters] = useState([]);
+    const [previousMove, setPreviousMove] = useState('@');
+
+    useEffect(() => {
+        loadMap();
+    }, []); // Run only on initial render
+
+    const initialLogTriggered = useRef(false);
+
+    const loadMap = () => {
+        const startPos = findStartPosition(mapArray, validChars.start);
+
+        if (startPos) {
+            setCurrentPosition(startPos);
+
+            const initialMoves = getPossibleMoves(startPos, mapArray);
+            const validMoves = validatePossibleMoves(initialMoves);
+            const finalMoves = removeBacktrackingMove(validMoves);
+
+            setPossibleMoves(finalMoves);
+
+            // Log the possible moves only once (on initial load)
+            if (!initialLogTriggered.current) {
+                console.log(`Initial possible moves:`, finalMoves);
+                initialLogTriggered.current = true;
+            }
+        }
+    };
+
+    useEffect(() => {
+        checkNextPosition(currentPosition, mapArray);
+    }, [currentPosition]);
 
     const moves = {
         up: { row: currentPosition.row - 1, col: currentPosition.col },
@@ -130,21 +154,44 @@ function App() {
         };
     };
 
+    useEffect(() => {
+        // Check if all values in possibleMoves are falsy (null, false, undefined)
+        const allFalsy = Object.values(possibleMoves).every(value => !value);
+
+        // Log only if not all properties are falsy
+        if (!allFalsy) {
+            console.log(`Next Possible Moves:`, possibleMoves);
+        }
+    }, [JSON.stringify(possibleMoves)]); // Using JSON.stringify to detect changes in object
+
     // Calculate and set movement directions
-    const changePositionAndCollectPath = (direction) => {
+    const changePositionAndCollectPath = (direction, source) => {
         const newPosition = moves[direction];
+
+        console.log(`[${source}] ...moving...`);
+        console.log(`Direction:`, direction);
+        console.log(`New Position:`, newPosition);
+        console.log(`Previous Move:`, previousMove);
 
         if (newPosition) {
             setCurrentPosition(newPosition);
             setPreviousMove(direction);
+
             setPath(prevPath => {
-                const newPath = [...prevPath, mapArray[newPosition.row][newPosition.col]];
                 const currentChar = mapArray[newPosition.row][newPosition.col];
+                const newPath = [...prevPath, currentChar];
+
+                if (!initialLogTriggered.current) {
+                    console.log(`[${source}] Updated Path:`, newPath);
+                    console.log(`[${source}] Current Character:`, currentChar);
+                    initialLogTriggered.current = true;
+                }
 
                 // Update letters state if we encounter a new letter
                 if (validChars.letters.includes(currentChar)) {
                     setLetters(prevLetters => {
                         if (!prevLetters.includes(currentChar)) {
+                            console.log(`[${source}] Found Letter:`, currentChar);
                             return [...prevLetters, currentChar];
                         }
                         return prevLetters;
@@ -153,16 +200,18 @@ function App() {
 
                 return newPath;
             });
+        } else {
+            console.log(`[${source}] Invalid move, position not updated`);
         }
     };
 
-    const checkAndMove = (direction, char) => {
-        if (possibleMoves[direction] === char) {
-            changePositionAndCollectPath(direction);
-            return true;
-        }
-        return false;
-    };
+    // const checkAndMoveByPriority = (direction, char) => {
+    //     if (possibleMoves[direction] === char) {
+    //         changePositionAndCollectPath(direction);
+    //         return true;
+    //     }
+    //     return false;
+    // };
 
     // Function to check if the coordinates have already been visited
     const isRevisitedPosition = (newPosition) => {
@@ -174,36 +223,42 @@ function App() {
 
         // Try to move based on predefined movement priorities
         if (attemptMoveByPriority()) {
-            console.log('attemptMoveByPriority');
-            console.log('possibleMoves', possibleMoves);
-            console.log('previousMove', previousMove);
             return;
         };
 
         // Check if we should move based on previous move and current position
         if (keepMovementDirection(currentChar)) {
-            console.log('keepMovementDirection');
-            console.log('possibleMoves', possibleMoves);
-            console.log('previousMove', previousMove);
             return;
         };
 
         // Handle specific case where previous move was down and current position is dash
         if (previousMove === 'down' && currentChar === validChars.dash) {
             continueOnIntersection(currentChar);
-            console.log('continueOnIntersection');
-            console.log('possibleMoves', possibleMoves);
-            console.log('previousMove', previousMove);
             return;
         }
 
         // Try to move according to valid letters in possible moves
         if (lettersOnTurns()) {
-            console.log('lettersOnTurns');
-            console.log('possibleMoves', possibleMoves);
-            console.log('previousMove', previousMove);
             return;
         };
+    };
+
+    // Try to move according to predefined movement priorities
+    const attemptMoveByPriority = () => {
+        const movePriority = [
+            ["right", "left"].map(direction => ({ direction, char: validChars.dash })),
+            ["up", "down"].map(direction => ({ direction, char: validChars.pipe })),
+            ["up", "down", "right", "left"].map(direction => ({ direction, char: validChars.plus })),
+            ["up", "down", "right", "left"].map(direction => ({ direction, char: validChars.letters })),
+        ].flat();
+
+        for (const { direction, char } of movePriority) {
+            if (possibleMoves[direction] === char) {
+                changePositionAndCollectPath(direction, "attemptMoveByPriority");
+                return true;
+            }
+        }
+        return false;
     };
 
     // Check if we should move based on previous move and current position
@@ -217,7 +272,7 @@ function App() {
 
         if (moveMap[previousMove] === currentChar) {
             console.log(`Previous move was ${previousMove}, moving ${previousMove} from char ${currentChar}`);
-            changePositionAndCollectPath(previousMove);
+            changePositionAndCollectPath(previousMove, "keepMovementDirection");
             return true;
         }
         return false;
@@ -228,7 +283,7 @@ function App() {
         for (const direction of ['right', 'left', 'up', 'down']) {
             if (possibleMoves[direction] === validChars.dash && isRevisitedPosition(moves[direction])) {
                 console.log('Revisiting dash, moving down to avoid loop');
-                changePositionAndCollectPath(direction);  // Avoid revisiting the dash
+                changePositionAndCollectPath(direction, "continueOnIntersection");
                 return;
             }
         }
@@ -241,24 +296,9 @@ function App() {
         for (const direction of ['right', 'down', 'up', 'left']) {
             if (validChars.letters.includes(possibleMoves[direction])) {
                 console.log(`Found letter "${possibleMoves[direction]}", moving ${direction}`);
-                changePositionAndCollectPath(direction);
+                changePositionAndCollectPath(direction, "lettersOnTurns");
                 return true;
             }
-        }
-        return false;
-    };
-
-    // Try to move according to predefined movement priorities
-    const attemptMoveByPriority = () => {
-        const movePriority = [
-            ["right", "left"].map(direction => ({ direction, char: validChars.dash })),
-            ["up", "down"].map(direction => ({ direction, char: validChars.pipe })),
-            ["up", "down", "right", "left"].map(direction => ({ direction, char: validChars.plus })),
-            ["up", "down", "right", "left"].map(direction => ({ direction, char: validChars.letters })),
-        ].flat();
-
-        for (const { direction, char } of movePriority) {
-            if (checkAndMove(direction, char)) return true;
         }
         return false;
     };
