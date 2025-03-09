@@ -49,7 +49,7 @@ function App() {
     const startChar = '@';
     const endChar = 'x';
 
-    const mapArray = basicMap.split('\n').map(row => row.split(''));
+    const mapArray = intersectionsMap.split('\n').map(row => row.split(''));
 
     const [currentPosition, setCurrentPosition] = useState(() => findStartPosition(mapArray, startChar));
     const [possibleMoves, setPossibleMoves] = useState({ up: false, down: false, left: false, right: false });
@@ -118,20 +118,7 @@ function App() {
     };
 
     // Calculate and set movement directions
-    const move = (direction) => {
-        if (previousMove) {
-            // Prevent moving back in the opposite direction
-            if (
-                (previousMove === 'up' && direction === 'down') ||
-                (previousMove === 'down' && direction === 'up') ||
-                (previousMove === 'left' && direction === 'right')
-            ) {
-                console.log('Cannot go back in the opposite direction!');
-                move('left'); // Default to a safe direction
-                return;
-            }
-        }
-
+    const changePositionAndCollectPath = (direction) => {
         const newPosition = moves[direction];
 
         if (newPosition) {
@@ -169,7 +156,7 @@ function App() {
 
     const checkAndMove = (direction, char) => {
         if (possibleMoves[direction] === char) {
-            move(direction);
+            changePositionAndCollectPath(direction);
             return true;
         }
         return false;
@@ -178,16 +165,28 @@ function App() {
     const moveAccordingToPath = () => {
         const currentChar = mapArray[currentPosition.row][currentPosition.col];
 
+        // Default movement priorities
+        const movePriority = [
+            { direction: "right", char: validChars.dash },
+            { direction: "left", char: validChars.dash },
+            { direction: "up", char: validChars.plus },
+            { direction: "down", char: validChars.plus }
+        ];
+
+        for (const { direction, char } of movePriority) {
+            if (checkAndMove(direction, char)) return;
+        }
+
         // Handle movement for `-`
         if (currentChar === validChars.dash) {
-            if (possibleMoves.right !== ' ' && possibleMoves.right !== null && previousMove !== 'left') {
+            if (possibleMoves.right !== false && possibleMoves.right !== null && previousMove !== 'left') {
                 console.log('Moving right');
-                move('right');
+                changePositionAndCollectPath('right');
                 return;
             }
-            if (possibleMoves.left !== ' ' && possibleMoves.left !== null && previousMove !== 'right') {
+            if (possibleMoves.left !== false && possibleMoves.left !== null && previousMove !== 'right') {
                 console.log('Moving left');
-                move('left');
+                changePositionAndCollectPath('left');
                 return;
             }
         }
@@ -197,11 +196,11 @@ function App() {
             if (possibleMoves[direction] === validChars.pipe) {
                 if (previousMove === 'up' && direction === 'down' || previousMove === 'down' && direction === 'up') {
                     console.log('Cannot go back in the opposite direction');
-                    move('left'); // Edge case, move safely
+                    changePositionAndCollectPath('left'); // Edge case, move safely
                     continue;
                 }
                 console.log(`Moving ${direction} towards pipe`);
-                move(direction);
+                changePositionAndCollectPath(direction);
                 return;
             }
         }
@@ -210,7 +209,7 @@ function App() {
         for (const direction of ['right', 'down', 'left']) {
             if (validChars.letters.includes(possibleMoves[direction])) {
                 console.log(`Found letter "${possibleMoves[direction]}", moving ${direction}`);
-                move(direction);
+                changePositionAndCollectPath(direction);
                 return;
             }
         }
@@ -218,20 +217,12 @@ function App() {
         // Handle `+` intersections
         if (currentChar === validChars.plus) {
             if (possibleMoves.right === '-' || possibleMoves.left === '-') {
-                if (possibleMoves.right === '-') return move('right');
-                if (possibleMoves.left === '-') return move('left');
+                if (possibleMoves.right === '-') return changePositionAndCollectPath('right');
+                if (possibleMoves.left === '-') return changePositionAndCollectPath('left');
             }
-            if (possibleMoves.up === '|') return move('up');
-            if (possibleMoves.down === '|') return move('down');
+            if (possibleMoves.up === '|') return changePositionAndCollectPath('up');
+            if (possibleMoves.down === '|') return changePositionAndCollectPath('down');
         }
-
-        // Handle movement based on the `+` character
-        if (currentChar === validChars.plus) {
-            if (checkAndMove('down', validChars.pipe) || checkAndMove('up', validChars.pipe) || checkAndMove('left', validChars.dash) || checkAndMove('right', validChars.dash)) return;
-        }
-
-        // Default movement priorities
-        if (checkAndMove('right', validChars.dash) || checkAndMove('left', validChars.dash) || checkAndMove('up', validChars.plus) || checkAndMove('down', validChars.plus)) return;
     };
 
     console.log('possibleMoves', possibleMoves);
