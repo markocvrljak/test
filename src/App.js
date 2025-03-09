@@ -82,13 +82,45 @@ function App() {
     // Calculate possible moves based on the current position
     const checkNextPosition = (currentPosition, mapArray) => {
         const { row, col } = currentPosition;
-        const upChar = row - 1 >= 0 ? mapArray[row - 1][col] : null;
-        const downChar = row + 1 < mapArray.length ? mapArray[row + 1][col] : null;
-        const leftChar = mapArray[row][col - 1];
-        const rightChar = mapArray[row][col + 1];
 
-        setPossibleMoves({ up: upChar, down: downChar, left: leftChar, right: rightChar });
+        const possibleMoves = {
+            up: row - 1 >= 0 ? mapArray[row - 1][col] : null,
+            down: row + 1 < mapArray.length ? mapArray[row + 1][col] : null,
+            left: mapArray[row][col - 1],
+            right: mapArray[row][col + 1],
+        }
+
+        // Validate possible moves
+        let validMoves = validatePossibleMoves(possibleMoves);
+
+        // Map previousMove to its opposite direction
+        const opposite = {
+            up: "down",
+            down: "up",
+            left: "right",
+            right: "left"
+        };
+
+        // Remove the backtracking move
+        if (previousMove && opposite[previousMove]) {
+            validMoves[opposite[previousMove]] = false;
+        }
+
+        setPossibleMoves(validMoves);
     };
+
+    const validatePossibleMoves = (possibleMoves) => {
+        const { up, down, left, right } = possibleMoves;
+        const validSet = [validChars.pipe, validChars.dash, validChars.plus, validChars.start, validChars.end, ...validChars.letters];
+
+        return {
+            up: validSet.includes(up) && up,
+            down: validSet.includes(down) && down,
+            left: validSet.includes(left) && left,
+            right: validSet.includes(right) && right,
+        };
+    };
+
 
     // Calculate and set movement directions
     const move = (direction) => {
@@ -205,6 +237,10 @@ function App() {
         // Default movement priorities
         if (checkAndMove('right', validChars.dash) || checkAndMove('left', validChars.dash) || checkAndMove('up', validChars.plus) || checkAndMove('down', validChars.plus)) return;
     };
+
+    console.log('possibleMoves', possibleMoves);
+    console.log('currentPosition', currentPosition);
+    console.log('previousMove', previousMove);
 
     return (
         <div>
