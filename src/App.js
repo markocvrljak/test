@@ -35,28 +35,34 @@ function App() {
        |
        +-B--x-C--D`;
 
+    const startChar = '@';
+    const endChar = 'x';
+
     const mapArray = intersectionsMap.split('\n').map(row => row.split(''));
 
-    // --------------------------------
-
-    const validChars = {
-        dash: '-',
-        plus: '+',
-        pipe: '|',
-        letters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
-        start: '@',
-        end: 'x',
-    };
-
-    const [currentPosition, setCurrentPosition] = useState(() => findStartPosition(mapArray, validChars.start));
+    const [currentPosition, setCurrentPosition] = useState(() => findStartPosition(mapArray, startChar));
     const [possibleMoves, setPossibleMoves] = useState({ up: false, down: false, left: false, right: false });
     const [path, setPath] = useState([]);
     const [letters, setLetters] = useState([]);
-    const [previousMove, setPreviousMove] = useState('@');
+    const [previousMove, setPreviousMove] = useState(null);
 
     useEffect(() => {
         loadMap();
     }, []); // Run only on initial render
+
+    useEffect(() => {
+        checkNextPosition(currentPosition, mapArray);
+    }, [currentPosition]);
+
+    useEffect(() => {
+        // Check if all values in possibleMoves are falsy (null, false, undefined)
+        const allFalsy = Object.values(possibleMoves).every(value => !value);
+
+        // Log only if not all properties are falsy
+        if (!allFalsy) {
+            console.log(`Next Possible New Moves:`, possibleMoves);
+        }
+    }, [JSON.stringify(possibleMoves)]); // Using JSON.stringify to detect changes in object
 
     const initialLogTriggered = useRef(false);
 
@@ -80,9 +86,14 @@ function App() {
         }
     };
 
-    useEffect(() => {
-        checkNextPosition(currentPosition, mapArray);
-    }, [currentPosition]);
+    const validChars = {
+        dash: '-',
+        plus: '+',
+        pipe: '|',
+        letters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+        start: startChar,
+        end: endChar,
+    };
 
     const moves = {
         up: { row: currentPosition.row - 1, col: currentPosition.col },
@@ -117,6 +128,18 @@ function App() {
         setPossibleMoves(validMoves);
     };
 
+    // Function to get possible moves based on the current position
+    const getPossibleMoves = (currentPosition, mapArray) => {
+        const { row, col } = currentPosition;
+
+        return {
+            up: row - 1 >= 0 ? mapArray[row - 1][col] : null,
+            down: row + 1 < mapArray.length ? mapArray[row + 1][col] : null,
+            left: mapArray[row][col - 1],
+            right: mapArray[row][col + 1],
+        };
+    };
+
     // Function to validate possible moves based on valid characters
     const validatePossibleMoves = (possibleMoves) => {
         const validSet = Object.values(validChars).flat();
@@ -142,46 +165,25 @@ function App() {
         return validMoves;
     };
 
-    // Function to get possible moves based on the current position
-    const getPossibleMoves = (currentPosition, mapArray) => {
-        const { row, col } = currentPosition;
-
-        return {
-            up: row - 1 >= 0 ? mapArray[row - 1][col] : null,
-            down: row + 1 < mapArray.length ? mapArray[row + 1][col] : null,
-            left: mapArray[row][col - 1],
-            right: mapArray[row][col + 1],
-        };
-    };
-
-    useEffect(() => {
-        // Check if all values in possibleMoves are falsy (null, false, undefined)
-        const allFalsy = Object.values(possibleMoves).every(value => !value);
-
-        // Log only if not all properties are falsy
-        if (!allFalsy) {
-            console.log(`Next Possible Moves:`, possibleMoves);
-        }
-    }, [JSON.stringify(possibleMoves)]); // Using JSON.stringify to detect changes in object
-
     // Calculate and set movement directions
     const changePositionAndCollectPath = (direction, source) => {
         const newPosition = moves[direction];
+        const currentChar = mapArray[newPosition.row][newPosition.col];
 
-        console.log(`[${source}] ...moving...`);
+        console.log(`running [${source}] from last position ...moving...`);
         console.log(`Direction:`, direction);
-        console.log(`New Position:`, newPosition);
-        console.log(`Previous Move:`, previousMove);
+        console.log(`Current position:`, currentChar ?? "@");
 
         if (newPosition) {
             setCurrentPosition(newPosition);
             setPreviousMove(direction);
 
             setPath(prevPath => {
-                const currentChar = mapArray[newPosition.row][newPosition.col];
                 const newPath = [...prevPath, currentChar];
 
                 if (!initialLogTriggered.current) {
+                    console.log(`New Position:`, newPosition);
+
                     console.log(`[${source}] Updated Path:`, newPath);
                     console.log(`[${source}] Current Character:`, currentChar);
                     initialLogTriggered.current = true;
@@ -191,7 +193,10 @@ function App() {
                 if (validChars.letters.includes(currentChar)) {
                     setLetters(prevLetters => {
                         if (!prevLetters.includes(currentChar)) {
-                            console.log(`[${source}] Found Letter:`, currentChar);
+                            if (!initialLogTriggered.current) {
+                                console.log(`[${source}] Found Letter:`, currentChar);
+                                initialLogTriggered.current = true;
+                            }
                             return [...prevLetters, currentChar];
                         }
                         return prevLetters;
@@ -205,14 +210,6 @@ function App() {
         }
     };
 
-    // const checkAndMoveByPriority = (direction, char) => {
-    //     if (possibleMoves[direction] === char) {
-    //         changePositionAndCollectPath(direction);
-    //         return true;
-    //     }
-    //     return false;
-    // };
-
     // Function to check if the coordinates have already been visited
     const isRevisitedPosition = (newPosition) => {
         return path.some(position => position.row === newPosition.row && position.col === newPosition.col);
@@ -221,15 +218,8 @@ function App() {
     const moveAccordingToPath = () => {
         const currentChar = mapArray[currentPosition.row][currentPosition.col];
 
-        // Try to move based on predefined movement priorities
-        if (attemptMoveByPriority()) {
-            return;
-        };
-
         // Check if we should move based on previous move and current position
-        if (keepMovementDirection(currentChar)) {
-            return;
-        };
+        if (shouldMoveBasedOnPreviousMove(currentChar)) return;
 
         // Handle specific case where previous move was down and current position is dash
         if (previousMove === 'down' && currentChar === validChars.dash) {
@@ -238,31 +228,14 @@ function App() {
         }
 
         // Try to move according to valid letters in possible moves
-        if (lettersOnTurns()) {
-            return;
-        };
-    };
+        if (handleLetterMovement()) return;
 
-    // Try to move according to predefined movement priorities
-    const attemptMoveByPriority = () => {
-        const movePriority = [
-            ["right", "left"].map(direction => ({ direction, char: validChars.dash })),
-            ["up", "down"].map(direction => ({ direction, char: validChars.pipe })),
-            ["up", "down", "right", "left"].map(direction => ({ direction, char: validChars.plus })),
-            ["up", "down", "right", "left"].map(direction => ({ direction, char: validChars.letters })),
-        ].flat();
-
-        for (const { direction, char } of movePriority) {
-            if (possibleMoves[direction] === char) {
-                changePositionAndCollectPath(direction, "attemptMoveByPriority");
-                return true;
-            }
-        }
-        return false;
+        // Try to move based on predefined movement priorities
+        if (attemptMoveByPriority()) return;
     };
 
     // Check if we should move based on previous move and current position
-    const keepMovementDirection = (currentChar) => {
+    const shouldMoveBasedOnPreviousMove = (currentChar) => {
         const moveMap = {
             down: validChars.pipe,
             up: validChars.pipe,
@@ -271,8 +244,8 @@ function App() {
         };
 
         if (moveMap[previousMove] === currentChar) {
-            console.log(`Previous move was ${previousMove}, moving ${previousMove} from char ${currentChar}`);
-            changePositionAndCollectPath(previousMove, "keepMovementDirection");
+            console.log(`Previous move was ${previousMove}, moving ${previousMove}`);
+            changePositionAndCollectPath(previousMove, "shouldMoveBasedOnPreviousMove");
             return true;
         }
         return false;
@@ -288,15 +261,33 @@ function App() {
             }
         }
         console.log('Previous move was down, moving down');
-        changePositionAndCollectPath('down');
+        changePositionAndCollectPath('down', "continueOnIntersection");
     };
 
     // Handle movement when encountering letters
-    const lettersOnTurns = () => {
+    const handleLetterMovement = () => {
         for (const direction of ['right', 'down', 'up', 'left']) {
             if (validChars.letters.includes(possibleMoves[direction])) {
                 console.log(`Found letter "${possibleMoves[direction]}", moving ${direction}`);
-                changePositionAndCollectPath(direction, "lettersOnTurns");
+                changePositionAndCollectPath(direction, "handleLetterMovement");
+                return true;
+            }
+        }
+        return false;
+    };
+
+    // Try to move according to predefined movement priorities
+    const attemptMoveByPriority = () => {
+        const movePriority = [
+            ["right", "left"].map(direction => ({ direction, char: validChars.dash })),
+            ["up", "down"].map(direction => ({ direction, char: validChars.pipe })),
+            ["up", "down", "right", "left"].map(direction => ({ direction, char: validChars.plus })),
+            ["up", "down", "right", "left"].map(direction => ({ direction, char: validChars.letters })),
+        ].flat();
+
+        for (const { direction, char } of movePriority) {
+            if (possibleMoves[direction] === char) {
+                changePositionAndCollectPath(direction, "attemptMoveByPriority");
                 return true;
             }
         }
