@@ -110,17 +110,12 @@ function App() {
     };
 
     const validatePossibleMoves = (possibleMoves) => {
-        const { up, down, left, right } = possibleMoves;
-        const validSet = [validChars.pipe, validChars.dash, validChars.plus, validChars.start, validChars.end, ...validChars.letters];
+        const validSet = Object.values(validChars).flat();
 
-        return {
-            up: validSet.includes(up) && up,
-            down: validSet.includes(down) && down,
-            left: validSet.includes(left) && left,
-            right: validSet.includes(right) && right,
-        };
+        return Object.fromEntries(
+            Object.entries(possibleMoves).map(([k, v]) => [k, validSet.includes(v) && v])
+        );
     };
-
 
     // Calculate and set movement directions
     const move = (direction) => {
@@ -138,6 +133,7 @@ function App() {
         }
 
         const newPosition = moves[direction];
+
         if (newPosition) {
             setCurrentPosition(newPosition);
             setPreviousMove(direction);
