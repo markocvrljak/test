@@ -52,7 +52,7 @@ function App() {
        |
        +-B--x-C--D`;
 
-    const mapArray = sameLocationMap.split('\n').map(row => row.split(''));
+    const mapArray = intersectionsMapDashReverse.split('\n').map(row => row.split(''));
 
     const startChar = '@';
     const endChar = 'x';
@@ -239,8 +239,8 @@ function App() {
         };
 
         // Try to move based on predefined movement priorities and next possible moves
-        if (attemptMoveByPriority()) {
-            console.log('Moved based on priority');
+        if (attemptMoveByNextPossibleMove()) {
+            console.log('Moved based on next possible moves');
             return;
         };
 
@@ -251,7 +251,6 @@ function App() {
     const isRevisitedPosition = (newPosition) => {
         // Check if the newPosition is already in the path
         const revisit = path.some(position => position.row === newPosition.row && position.col === newPosition.col);
-        console.log(`Revisit Check for (${newPosition.row}, ${newPosition.col}):`, revisit);
         return revisit;
     };
 
@@ -267,17 +266,13 @@ function App() {
 
         // Check all directions (up, down, left, right) for valid moves
         for (const { direction, char } of directionsToCheck) {
-            if (possibleMoves[direction] === char && !isRevisitedPosition(moves[direction])) {
-                console.log(`Moving ${direction} to avoid revisiting`);
-                changePositionAndCollectPath(direction, "continueOnIntersection");
+            if (possibleMoves[direction] === char && isRevisitedPosition(currentPosition)) {
+                console.log(`Moving forward to avoid revisiting`);
+                changePositionAndCollectPath(previousMove, "continueOnIntersection");
                 return; // Exit after making a valid move
-            } else if (possibleMoves[direction] === char) {
-                console.log(`Revisiting position on ${direction}, checking next possibility...`);
             }
         }
     };
-
-
 
     // Check if we should move based on previous move and current position character
     const shouldMoveBasedOnPreviousMove = (currentChar) => {
@@ -297,7 +292,7 @@ function App() {
     };
 
     // Try to move based on predefined movement priorities and next possible moves
-    const attemptMoveByPriority = () => {
+    const attemptMoveByNextPossibleMove = () => {
         const movePriority = [
             ["right", "left"].map(direction => ({ direction, char: validChars.dash })),
             ["up", "down"].map(direction => ({ direction, char: validChars.pipe })),
@@ -307,7 +302,7 @@ function App() {
 
         for (const { direction, char } of movePriority) {
             if (possibleMoves[direction] === char) {
-                changePositionAndCollectPath(direction, "attemptMoveByPriority");
+                changePositionAndCollectPath(direction, "attemptMoveByNextPossibleMove");
                 return true;
             }
         }
