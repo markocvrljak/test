@@ -52,7 +52,7 @@ function App() {
        |
        +-B--x-C--D`;
 
-    const mapArray = intersectionsMapDashReverse.split('\n').map(row => row.split(''));
+    const mapArray = sameLocationMap.split('\n').map(row => row.split(''));
 
     const startChar = '@';
     const endChar = 'x';
@@ -220,14 +220,15 @@ function App() {
     const moveAccordingToPath = () => {
         const currentChar = mapArray[currentPosition.row][currentPosition.col];
 
-        // Handle specific case where previous move was up or down and current position is dash
-        if ((['down', 'up'].includes(previousMove)) && currentChar === validChars.dash) {
-            continueOnIntersection(currentChar);
-            return;
-        }
+        const specialCases = {
+            dash: ['down', 'up'],
+            pipe: ['left', 'right'],
+            letter: ['up', 'down', 'left', 'right']
+        };
 
-        // Handle specific case where previous move was left or right and current position is pipe
-        if ((['left', 'right'].includes(previousMove)) && currentChar === validChars.pipe) {
+        if (specialCases.dash.includes(previousMove) && currentChar === validChars.dash ||
+            specialCases.pipe.includes(previousMove) && currentChar === validChars.pipe ||
+            specialCases.letter.includes(previousMove) && validChars.letters.includes(currentChar)) {
             continueOnIntersection(currentChar);
             return;
         }
@@ -257,19 +258,13 @@ function App() {
 
     // Handle specific case where previous move was up or down and current position is dash
     const continueOnIntersection = () => {
-        const directionsToCheck = [
-            { direction: 'up', char: validChars.pipe },
-            { direction: 'down', char: validChars.pipe },
-            { direction: 'left', char: validChars.dash },
-            { direction: 'right', char: validChars.dash }
-        ];
+        const directions = ["up", "down", "left", "right"];
 
-        // Check all directions (up, down, left, right) for valid moves
-        for (const { direction, char } of directionsToCheck) {
-            if (possibleMoves[direction] === char && isRevisitedPosition(currentPosition)) {
+        for (const direction of directions) {
+            if (possibleMoves[direction] !== previousMove && isRevisitedPosition(currentPosition)) {
                 console.log(`Moving forward to avoid revisiting`);
                 changePositionAndCollectPath(previousMove, "continueOnIntersection");
-                return; // Exit after making a valid move
+                return;
             }
         }
     };
