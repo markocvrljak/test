@@ -53,7 +53,9 @@ const compactMap = ` +-L-+
 @B+ ++ H
  ++    x`;
 
-export const mapArray = sameLocationMap.split('\n').map(row => row.split(''));
+
+
+export const mapArray = intersectionsMapDash.split('\n').map(row => row.split(''));
 
 const startChar = '@';
 const endChar = 'x';
