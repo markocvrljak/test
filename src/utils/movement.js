@@ -2,7 +2,6 @@
 import { validChars } from "./load";
 
 // Find possible moves based on the current position
-
 export const handleNextPossibleMoves = (currentPosition, mapArray, previousMove) => {
     const allPossibleMoves = getValidMovement(currentPosition, mapArray);
     const validMovesDirty = validatePossibleMoves(allPossibleMoves);
@@ -12,7 +11,7 @@ export const handleNextPossibleMoves = (currentPosition, mapArray, previousMove)
 };
 
 // Get possible moves based on the current position
-export const getValidMovement = (currentPosition, mapArray) => {
+const getValidMovement = (currentPosition, mapArray) => {
     const { row, col } = currentPosition;
 
     return {
@@ -24,7 +23,7 @@ export const getValidMovement = (currentPosition, mapArray) => {
 };
 
 // Validate possible moves based on valid characters
-export const validatePossibleMoves = (possibleMoves) => {
+const validatePossibleMoves = (possibleMoves) => {
     const validSet = Object.values(validChars).flat();
 
     return Object.fromEntries(
@@ -33,7 +32,7 @@ export const validatePossibleMoves = (possibleMoves) => {
 };
 
 // Remove the backtracking move based on the previous move
-export const removeBacktrackingMove = (validMoves, previousMove) => {
+const removeBacktrackingMove = (validMoves, previousMove) => {
     const opposite = {
         up: "down",
         down: "up",

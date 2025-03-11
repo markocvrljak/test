@@ -1,5 +1,3 @@
-
-
 const basicMap = `  @---A---+
           |
   x-B-+   C
@@ -81,7 +79,7 @@ export function findStartPosition(array, startChar) {
 }
 export const loadMap = () => {
     const startPos = findStartPosition(mapArray, validChars.start);
-    console.log('loadMap in load.js', startPos)
+    console.log('start position loaded at...', startPos)
     if (startPos) {
         return startPos;
     }
