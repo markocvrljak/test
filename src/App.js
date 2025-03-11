@@ -1,66 +1,13 @@
 import './App.css';
 import { useState, useEffect, useRef } from 'react';
 
-import { loadMap, findStartPosition } from './utils/load';
+import { loadMap } from './utils/load';
 import { handleNextPossibleMoves } from './utils/movement';
+import { mapArray } from './utils/load';
+import MapDisplay from './components/Map';
+import Controls from './components/Controls';
 
 function App() {
-    const basicMap = `  @---A---+
-          |
-  x-B-+   C
-      |   |
-      +---+`;
-
-    const intersectionsMapDash = `  @
-  | +-C--+
-  A |    |
-  +---B--+
-    |      x
-    |      |
-    +---D--+`;
-
-    // fix moving from + to letter
-    const intersectionsMapDashReverse = `  x 
-  | +-C--+
-  A |    |
-  +---B--+
-    |      @
-    |      |
-    +---D--+`;
-
-    const intersectionsMapPipe = `  @
-  |
-  A
-  +-+
-    |
-  x-|-+
-    +-+`;
-
-    const onTurnsMap = `  @---A---+
-          |
-  x-B-+   |
-      |   |
-      +---C`;
-
-    const sameLocationMap = `     +-O-N-+
-     |     |
-     |   +-I-+
- @-G-O-+ | | |
-     | | +-+ E
-     +-+     S
-             |
-             x`;
-
-    const ignoreAfterEndMap = `  @-A--+
-       |
-       +-B--x-C--D`;
-
-    const compactMap = ` +-L-+
- |  +A-+
-@B+ ++ H
- ++    x`;
-
-    const mapArray = sameLocationMap.split('\n').map(row => row.split(''));
 
     const startChar = '@';
     const endChar = 'x';
@@ -90,7 +37,7 @@ function App() {
 
     useEffect(() => {
         setCurrentPosition(loadMap());
-    }, [currentPosition]);
+    }, []);
 
     useEffect(() => {
         const validMoves = handleNextPossibleMoves(currentPosition, mapArray, previousMove);
@@ -110,83 +57,6 @@ function App() {
     }, [JSON.stringify(possibleMoves)]); // Using JSON.stringify to detect changes in object
 
     const initialLogTriggered = useRef(false);
-
-    // const loadMap = () => {
-    //     const startPos = findStartPosition(mapArray, validChars.start);
-
-    //     if (startPos) {
-    //         setCurrentPosition(startPos);
-
-    //         // Set next possible moves and log the initial moves only once (on initial render/load)
-    //         if (!initialLogTriggered.current) {
-    //             console.log('Loading map...');
-    //             console.log(`Initial possible moves:`, handleNextPossibleMoves(startPos, mapArray));
-    //             initialLogTriggered.current = true;
-    //         }
-    //     }
-    // };
-
-    // function findStartPosition(array, startChar) {
-    //     for (let row = 0; row < array.length; row++) {
-    //         for (let col = 0; col < array[row].length; col++) {
-    //             if (array[row][col] === startChar) {
-    //                 return { row, col };
-    //             }
-    //         }
-    //     }
-    //     return null;
-    // }
-
-    // Find possible moves based on the current position
-    // const handleNextPossibleMoves = (currentPosition, mapArray) => {
-    //     const allPossibleMoves = getValidMovement(currentPosition, mapArray);
-    //     const validMovesDirty = validatePossibleMoves(allPossibleMoves);
-    //     // console.log(`validMovesDirty:`, validMovesDirty);
-
-    //     const validMovesClean = removeBacktrackingMove(validMovesDirty);
-    //     // console.log(`validMovesClean:`, validMovesClean);
-
-    //     setPossibleMoves(validMovesClean);
-
-    //     return validMovesClean;
-    // };
-
-    // Get possible moves based on the current position
-    const getValidMovement = (currentPosition, mapArray) => {
-        const { row, col } = currentPosition;
-
-        return {
-            up: row - 1 >= 0 ? mapArray[row - 1][col] : null,
-            down: row + 1 < mapArray.length ? mapArray[row + 1][col] : null,
-            left: col - 1 >= 0 ? mapArray[row][col - 1] : null,
-            right: col + 1 < mapArray[row].length ? mapArray[row][col + 1] : null,
-        };
-    };
-
-    // Validate possible moves based on valid characters
-    const validatePossibleMoves = (possibleMoves) => {
-        const validSet = Object.values(validChars).flat();
-
-        return Object.fromEntries(
-            Object.entries(possibleMoves).map(([k, v]) => [k, validSet.includes(v) && v])
-        );
-    };
-
-    // Remove the backtracking move based on the previous move
-    const removeBacktrackingMove = (validMoves) => {
-        const opposite = {
-            up: "down",
-            down: "up",
-            left: "right",
-            right: "left"
-        };
-
-        if (previousMove && opposite[previousMove]) {
-            validMoves[opposite[previousMove]] = false;
-        }
-
-        return validMoves;
-    };
 
     // Calculate and update the new position and path based on movement directions
     const changePositionAndCollectPath = (direction, source) => {
@@ -318,7 +188,7 @@ function App() {
         };
 
         if (moveMap[previousMove]?.includes(currentChar)) {
-            console.log(`Previous move was ${previousMove}, moving ${previousMove}`);
+            console.log(`Previous move was ${previousMove}, moving ${previousMove} on ${currentChar}`);
             changePositionAndCollectPath(previousMove, "shouldMoveBasedOnPreviousMove");
             return true;
         }
@@ -344,36 +214,12 @@ function App() {
 
     return (
         <div>
-            <table style={{ borderCollapse: 'collapse', width: '50%', margin: '20px auto', border: '1px solid black' }}>
-                <tbody>
-                    {mapArray.map((row, rowIndex) => (
-                        <tr key={rowIndex}>
-                            {row.map((cell, cellIndex) => (
-                                <td
-                                    key={cellIndex}
-                                    style={{
-                                        border: '1px solid black',
-                                        padding: '8px',
-                                        textAlign: 'center',
-                                        backgroundColor: rowIndex === currentPosition.row && cellIndex === currentPosition.col ? 'yellow' : 'white',
-                                    }}
-                                >
-                                    {cell}
-                                </td>
-                            ))}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-            <div>
-                <h3>Path Taken:</h3>
-                <p>{path.map(step => mapArray[step.row][step.col]).join(' → ')}</p>
-            </div>
-            <div>
-                <h3>Collected Letters:</h3>
-                <p>{letters.join(', ')}</p>
-            </div>
-            <button onClick={moveAccordingToPath}>Move</button>
+            <MapDisplay mapArray={mapArray} currentPosition={currentPosition} />
+            <h3>Path Taken:</h3>
+            <p>{path.map(step => mapArray[step.row][step.col]).join(' → ')}</p>
+            <h3>Collected Letters:</h3>
+            <p>{letters.join(', ')}</p>
+            <Controls moveAccordingToPath={moveAccordingToPath} />
         </div>
     );
 }
