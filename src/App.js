@@ -1,6 +1,9 @@
 import './App.css';
 import { useState, useEffect, useRef } from 'react';
 
+import { loadMap, findStartPosition } from './utils/load';
+import { handleNextPossibleMoves } from './utils/movement';
+
 function App() {
     const basicMap = `  @---A---+
           |
@@ -52,7 +55,12 @@ function App() {
        |
        +-B--x-C--D`;
 
-    const mapArray = onTurnsMap.split('\n').map(row => row.split(''));
+    const compactMap = ` +-L-+
+ |  +A-+
+@B+ ++ H
+ ++    x`;
+
+    const mapArray = sameLocationMap.split('\n').map(row => row.split(''));
 
     const startChar = '@';
     const endChar = 'x';
@@ -66,7 +74,7 @@ function App() {
         end: endChar,
     };
 
-    const [currentPosition, setCurrentPosition] = useState(() => findStartPosition(mapArray, startChar));
+    const [currentPosition, setCurrentPosition] = useState({ row: 0, col: 0 });
     const [possibleMoves, setPossibleMoves] = useState({ up: false, down: false, left: false, right: false });
     const [previousMove, setPreviousMove] = useState(null);
 
@@ -81,13 +89,12 @@ function App() {
     };
 
     useEffect(() => {
-        // Run only on initial render to load the map
-        loadMap();
-    }, []);
+        setCurrentPosition(loadMap());
+    }, [currentPosition]);
 
     useEffect(() => {
-        // Run whenever currentPosition changes
-        handleNextPossibleMoves(currentPosition, mapArray);
+        const validMoves = handleNextPossibleMoves(currentPosition, mapArray, previousMove);
+        setPossibleMoves(validMoves);
         isRevisitedPosition(currentPosition);
     }, [currentPosition]);
 
@@ -99,48 +106,50 @@ function App() {
         if (!allFalsy) {
             console.log(`Next Possible New Moves:`, possibleMoves);
         }
+
     }, [JSON.stringify(possibleMoves)]); // Using JSON.stringify to detect changes in object
 
     const initialLogTriggered = useRef(false);
 
-    const loadMap = () => {
-        const startPos = findStartPosition(mapArray, validChars.start);
+    // const loadMap = () => {
+    //     const startPos = findStartPosition(mapArray, validChars.start);
 
-        if (startPos) {
-            setCurrentPosition(startPos);
+    //     if (startPos) {
+    //         setCurrentPosition(startPos);
 
-            // Set next possible moves and log the initial moves only once (on initial render/load)
-            if (!initialLogTriggered.current) {
-                console.log(`Initial possible moves:`, handleNextPossibleMoves(startPos, mapArray));
-                initialLogTriggered.current = true;
-            }
-        }
-    };
+    //         // Set next possible moves and log the initial moves only once (on initial render/load)
+    //         if (!initialLogTriggered.current) {
+    //             console.log('Loading map...');
+    //             console.log(`Initial possible moves:`, handleNextPossibleMoves(startPos, mapArray));
+    //             initialLogTriggered.current = true;
+    //         }
+    //     }
+    // };
 
-    function findStartPosition(array, startChar) {
-        for (let row = 0; row < array.length; row++) {
-            for (let col = 0; col < array[row].length; col++) {
-                if (array[row][col] === startChar) {
-                    return { row, col };
-                }
-            }
-        }
-        return null;
-    }
+    // function findStartPosition(array, startChar) {
+    //     for (let row = 0; row < array.length; row++) {
+    //         for (let col = 0; col < array[row].length; col++) {
+    //             if (array[row][col] === startChar) {
+    //                 return { row, col };
+    //             }
+    //         }
+    //     }
+    //     return null;
+    // }
 
     // Find possible moves based on the current position
-    const handleNextPossibleMoves = (currentPosition, mapArray) => {
-        const allPossibleMoves = getValidMovement(currentPosition, mapArray);
-        const validMovesDirty = validatePossibleMoves(allPossibleMoves);
-        // console.log(`validMovesDirty:`, validMovesDirty);
+    // const handleNextPossibleMoves = (currentPosition, mapArray) => {
+    //     const allPossibleMoves = getValidMovement(currentPosition, mapArray);
+    //     const validMovesDirty = validatePossibleMoves(allPossibleMoves);
+    //     // console.log(`validMovesDirty:`, validMovesDirty);
 
-        const validMovesClean = removeBacktrackingMove(validMovesDirty);
-        // console.log(`validMovesClean:`, validMovesClean);
+    //     const validMovesClean = removeBacktrackingMove(validMovesDirty);
+    //     // console.log(`validMovesClean:`, validMovesClean);
 
-        setPossibleMoves(validMovesClean);
+    //     setPossibleMoves(validMovesClean);
 
-        return validMovesClean;
-    };
+    //     return validMovesClean;
+    // };
 
     // Get possible moves based on the current position
     const getValidMovement = (currentPosition, mapArray) => {
@@ -217,40 +226,36 @@ function App() {
 
     const handleLetterTurnCases = (currentChar, possibleMoves) => {
         const turnCases = [
-            { direction: "left", char: validChars.dash },
-            { direction: "right", char: validChars.dash },
-            { direction: "up", char: validChars.pipe },
-            { direction: "down", char: validChars.pipe },
+            { direction: "left", moveDirection: validChars.dash },
+            { direction: "right", moveDirection: validChars.dash },
+            { direction: "up", moveDirection: validChars.pipe },
+            { direction: "down", moveDirection: validChars.pipe },
         ];
 
-        for (const { direction, char } of turnCases) {
+        for (const { direction, moveDirection } of turnCases) {
             if (
                 validChars.letters.includes(currentChar) &&
-                possibleMoves[direction] === char &&
-                Object.keys(possibleMoves).every(
-                    (key) => key === direction || possibleMoves[key] === false
-                )
-            ) {
+                possibleMoves[direction] === moveDirection &&
+                (Object.values(possibleMoves).filter(Boolean).length <= 1)) {
                 attemptMoveByNextPossibleMove();
-                return true; // Return true if a case is handled
+                return true;
             }
         }
 
-        return false; // Return false if no case is handled
+        return false;
     };
 
     const countValidMoves = (possibleMoves) => {
         return Object.values(possibleMoves).filter((move) => move).length;
     };
 
+    const hasMultipleValidMoves = (possibleMoves) => {
+        return countValidMoves(possibleMoves) > 1;
+    };
 
     // Main function to determine the next move and how to proceed
     const moveAccordingToPath = () => {
         const currentChar = mapArray[currentPosition.row][currentPosition.col];
-
-        const hasMultipleValidMoves = (possibleMoves) => {
-            return countValidMoves(possibleMoves) > 1;
-        };
 
         if (handleLetterTurnCases(currentChar, possibleMoves)) {
             return;
@@ -297,9 +302,10 @@ function App() {
             if (possibleMoves[direction] !== previousMove && isRevisitedPosition(currentPosition)) {
                 console.log(`Moving forward on intersection...`);
                 changePositionAndCollectPath(previousMove, "continueOnIntersection");
-                return;
+                return true;
             }
         }
+        return false;
     };
 
     // Check if we should move based on previous move and current position character
@@ -328,10 +334,7 @@ function App() {
         ].flat();
 
         for (const { direction, char } of movePriority) {
-            if (
-                possibleMoves[direction] === char ||
-                (validChars.letters.includes(char) && possibleMoves[direction] === char)
-            ) {
+            if (possibleMoves[direction] === char) {
                 changePositionAndCollectPath(direction, "attemptMoveByNextPossibleMove");
                 return true;
             }
