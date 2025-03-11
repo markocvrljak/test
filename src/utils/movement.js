@@ -46,3 +46,12 @@ const removeBacktrackingMove = (validMoves, previousMove) => {
 
     return validMoves;
 };
+
+const countValidMoves = (possibleMoves) => {
+    return Object.values(possibleMoves).filter((move) => move).length;
+};
+
+export const hasMultipleValidMoves = (possibleMoves) => {
+    return countValidMoves(possibleMoves) > 1;
+};
+

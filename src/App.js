@@ -2,29 +2,21 @@ import './App.css';
 import { useState, useEffect, useRef } from 'react';
 
 import { loadMap, mapArray } from './utils/load';
-import { handleNextPossibleMoves } from './utils/movement';
+import { handleNextPossibleMoves, hasMultipleValidMoves } from './utils/movement';
 
 import MapDisplay from './components/Map';
 import Controls from './components/Controls';
 
-import { handleLetterTurnCases, attemptMoveByNextPossibleMove } from './utils/main';
+import {
+    handleLetterTurnCases,
+    attemptMoveByNextPossibleMove,
+    continueOnIntersection,
+    shouldMoveBasedOnPreviousMove
+} from './utils/main';
 
 import { validChars } from "./utils/load";
 
 function App() {
-
-    // const startChar = '@';
-    // const endChar = 'x';
-
-    // const validChars = {
-    //     dash: '-',
-    //     plus: '+',
-    //     pipe: '|',
-    //     letters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
-    //     start: startChar,
-    //     end: endChar,
-    // };
-
     const [currentPosition, setCurrentPosition] = useState({ row: 0, col: 0 });
     const [possibleMoves, setPossibleMoves] = useState({ up: false, down: false, left: false, right: false });
     const [previousMove, setPreviousMove] = useState(null);
@@ -48,7 +40,6 @@ function App() {
     useEffect(() => {
         const validMoves = handleNextPossibleMoves(currentPosition, mapArray, previousMove);
         setPossibleMoves(validMoves);
-        isRevisitedPosition(currentPosition);
     }, [currentPosition]);
 
     useEffect(() => {
@@ -78,7 +69,6 @@ function App() {
             setLetters(prevLetters => {
                 if (!prevLetters.includes(currentChar)) {
                     if (!initialLogTriggered.current) {
-                        console.log(`[${source}] Found Letter:`, currentChar);
                         initialLogTriggered.current = true;
                     }
                     return [...prevLetters, currentChar];
@@ -100,14 +90,6 @@ function App() {
         }
     };
 
-    const countValidMoves = (possibleMoves) => {
-        return Object.values(possibleMoves).filter((move) => move).length;
-    };
-
-    const hasMultipleValidMoves = (possibleMoves) => {
-        return countValidMoves(possibleMoves) > 1;
-    };
-
     // Main function to determine the next move and how to proceed
     const moveAccordingToPath = () => {
         const currentChar = mapArray[currentPosition.row][currentPosition.col];
@@ -116,18 +98,19 @@ function App() {
             return;
         }
 
-        if ((["down", "up"].includes(previousMove) && currentChar === validChars.dash) || (["left", "right"].includes(previousMove) && currentChar === validChars.pipe)) {
-            continueOnIntersection(currentChar);
+        if ((["down", "up"].includes(previousMove) && currentChar === validChars.dash)
+            || (["left", "right"].includes(previousMove) && currentChar === validChars.pipe)) {
+            continueOnIntersection(possibleMoves, previousMove, currentPosition, path, changePositionAndCollectPath);
             return;
         }
 
         if (["down", "up", "left", "right"].includes(previousMove) && validChars.letters.includes(currentChar) && hasMultipleValidMoves(possibleMoves)) {
-            continueOnIntersection(currentChar);
+            continueOnIntersection(possibleMoves, previousMove, currentPosition, path, changePositionAndCollectPath);
             return;
         }
 
         // Check if we should move based on previous move and current position character
-        if (shouldMoveBasedOnPreviousMove(currentChar)) {
+        if (shouldMoveBasedOnPreviousMove(validChars, currentChar, previousMove, changePositionAndCollectPath)) {
             console.log("Moved based on previous move");
             return;
         }
@@ -139,44 +122,6 @@ function App() {
         }
 
         console.log("No valid moves found, moving randomly");
-    };
-
-    // Check if the coordinates have already been visited
-    const isRevisitedPosition = (newPosition) => {
-        // Check if the newPosition is already in the path
-        const revisit = path.some(position => position.row === newPosition.row && position.col === newPosition.col);
-        return revisit;
-    };
-
-    // Handle specific case where previous move was up or down and current position is dash
-    const continueOnIntersection = () => {
-        const directions = ["up", "down", "left", "right"];
-
-        for (const direction of directions) {
-            if (possibleMoves[direction] !== previousMove && isRevisitedPosition(currentPosition)) {
-                console.log(`Moving forward on intersection...`);
-                changePositionAndCollectPath(previousMove, "continueOnIntersection");
-                return true;
-            }
-        }
-        return false;
-    };
-
-    // Check if we should move based on previous move and current position character
-    const shouldMoveBasedOnPreviousMove = (currentChar) => {
-        const moveMap = {
-            down: [validChars.pipe, ...validChars.letters],
-            up: [validChars.pipe, ...validChars.letters],
-            right: [validChars.dash, ...validChars.letters],
-            left: [validChars.dash, ...validChars.letters],
-        };
-
-        if (moveMap[previousMove]?.includes(currentChar)) {
-            console.log(`Previous move was ${previousMove}, moving ${previousMove} on ${currentChar}`);
-            changePositionAndCollectPath(previousMove, "shouldMoveBasedOnPreviousMove");
-            return true;
-        }
-        return false;
     };
 
     return (
