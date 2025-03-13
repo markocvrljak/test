@@ -89,17 +89,10 @@ function App() {
             return;
         }
 
-        if ((["down", "up"].includes(previousMove) && currentChar === validChars.dash)) {
-            continueOnIntersection(possibleMoves, previousMove, currentPosition, path, changePositionAndCollectPath);
-            return;
-        }
-
-        if ((["left", "right"].includes(previousMove) && currentChar === validChars.pipe)) {
-            continueOnIntersection(possibleMoves, previousMove, currentPosition, path, changePositionAndCollectPath);
-            return;
-        }
-
-        if (["down", "up", "left", "right"].includes(previousMove) && validChars.letters.includes(currentChar) && hasMultipleValidMoves(possibleMoves)) {
+        if (hasMultipleValidMoves(possibleMoves) && (
+            (["down", "up"].includes(previousMove) && currentChar === validChars.dash) ||
+            (["left", "right"].includes(previousMove) && currentChar === validChars.pipe) ||
+            (["down", "up", "left", "right"].includes(previousMove) && validChars.letters.includes(currentChar)))) {
             continueOnIntersection(possibleMoves, previousMove, currentPosition, path, changePositionAndCollectPath);
             return;
         }
