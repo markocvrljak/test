@@ -24,6 +24,7 @@ function App() {
 
     const [path, setPath] = useState([]);
     const [letters, setLetters] = useState([]);
+    const [endReached, setEndReached] = useState(false);
 
     const moves = {
         up: { row: currentPosition.row - 1, col: currentPosition.col },
@@ -57,27 +58,32 @@ function App() {
     // Calculate and update the new position and path based on movement directions
     const changePositionAndCollectPath = (direction, source) => {
         const newPosition = moves[direction];
-        const currentChar = mapArray[newPosition?.row][newPosition?.col];
+        const currentChar = mapArray[newPosition.row][newPosition.col];
 
         console.log(`running [${source}] from last position ...moving...`);
         console.log(`Direction:`, direction);
         console.log(`Current position:`, currentChar ?? "@");
 
-        // Update letters state if we encounter a new letter
-        if (validChars.letters.includes(currentChar)) {
-            setLetters(prevLetters => [...prevLetters, !isRevisitedPosition(newPosition, path) ? currentChar : null]);
+        // Move into the new position
+        setCurrentPosition(newPosition);
+        setPreviousMove(direction);
+
+        // Always add 'x' to the path, then stop path collection
+        if (currentChar === validChars.end) {
+            console.log(`[${source}] End reached at (${newPosition.row}, ${newPosition.col})!`);
+            setPath(prevPath => [...prevPath, { row: newPosition.row, col: newPosition.col }]);
+            setEndReached(true); // Mark that 'x' has been reached
+            return;
         }
 
-        if (newPosition) {
-            setCurrentPosition(newPosition);
-            setPreviousMove(direction);
+        // Stop collecting path after 'x' is reached
+        if (!endReached) {
+            setPath(prevPath => [...prevPath, { row: newPosition.row, col: newPosition.col }]);
+        }
 
-            setPath(prevPath => {
-                const newPath = [...prevPath, { row: newPosition.row, col: newPosition.col }]; // Store the coordinates
-                return newPath;
-            });
-        } else {
-            console.log(`[${source}] Invalid move, position not updated`);
+        // Stop collecting letters after 'x' is reached
+        if (!endReached && validChars.letters.includes(currentChar) && !isRevisitedPosition(newPosition, path)) {
+            setLetters(prevLetters => [...prevLetters, currentChar]);
         }
     };
 

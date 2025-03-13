@@ -54,7 +54,7 @@ const compactMap = ` +-L-+
 
 
 
-export const mapArray = basicMap.split('\n').map(row => row.split(''));
+export const mapArray = sameLocationMap.split('\n').map(row => row.split(''));
 
 const startChar = '@';
 const endChar = 'x';
@@ -133,10 +133,10 @@ const hasMultiplePathsFromStart = (array, startPos) => {
     // If more than one path is found, return error
     if (pathCount > 1) {
         console.error(`ERROR: Multiple paths found from '@' at (${row}, ${col}).`);
-        return true; // Map is invalid
+        return true;
     }
 
-    return false; // Map is valid
+    return false;
 };
 
 export const loadMap = () => {
