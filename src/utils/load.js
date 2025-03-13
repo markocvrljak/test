@@ -42,7 +42,7 @@ const sameLocationMap = `     +-O-N-+
      | | +-+ E
      +-+     S
              |
-             x`;
+             xx`;
 
 const ignoreAfterEndMap = `  @-A--+
        |
@@ -55,7 +55,7 @@ const compactMap = ` +-L-+
 
 
 
-export const mapArray = intersectionsMapDash.split('\n').map(row => row.split(''));
+export const mapArray = sameLocationMap.split('\n').map(row => row.split(''));
 
 const startChar = '@';
 const endChar = 'x';
@@ -69,20 +69,41 @@ export const validChars = {
     end: endChar,
 };
 
-export function findStartPosition(array, startChar) {
+export function findStartAndEndPositions(array, startChar, endChar) {
+    let startPositions = [];
+    let endPositions = [];
+
     for (let row = 0; row < array.length; row++) {
         for (let col = 0; col < array[row].length; col++) {
-            if (array[row][col] === startChar) {
-                return { row, col };
-            }
+            if (array[row][col] === startChar) startPositions.push({ row, col });
+            if (array[row][col] === endChar) endPositions.push({ row, col });
         }
     }
-    return null;
+
+    return { startPositions, endPositions };
 }
+
 export const loadMap = () => {
-    const startPos = findStartPosition(mapArray, validChars.start);
-    console.log('start position loaded at...', startPos)
-    if (startPos) {
-        return startPos;
+    const { startPositions, endPositions } = findStartAndEndPositions(mapArray, validChars.start, validChars.end);
+
+    if (startPositions.length === 0 || endPositions.length === 0) {
+        console.error(`ERROR: Map must contain both '${validChars.start}' (start) and '${validChars.end}' (end)`);
+        return null;
     }
+
+    if (startPositions.length > 1) {
+        console.error('ERROR: Multiple start positions found!');
+        return null;
+    }
+
+    if (endPositions.length > 1) {
+        console.error('ERROR: Multiple end positions found!');
+        return null;
+    }
+
+    console.log('✅ Map loaded successfully.');
+    console.log('🔹 Start position:', startPositions[0]);
+    console.log('🔹 End position:', endPositions[0]);
+
+    return startPositions[0];
 };

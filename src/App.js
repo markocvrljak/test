@@ -34,7 +34,7 @@ function App() {
 
     useEffect(() => {
         setTimeout(() => {
-            setCurrentPosition(loadMap());
+            setCurrentPosition(loadMap() || { row: 0, col: 0 });
         }, 1500)
     }, []);
 
@@ -90,6 +90,11 @@ function App() {
         }
 
         if ((["down", "up"].includes(previousMove) && currentChar === validChars.dash)) {
+            continueOnIntersection(possibleMoves, previousMove, currentPosition, path, changePositionAndCollectPath);
+            return;
+        }
+
+        if ((["left", "right"].includes(previousMove) && currentChar === validChars.pipe)) {
             continueOnIntersection(possibleMoves, previousMove, currentPosition, path, changePositionAndCollectPath);
             return;
         }
